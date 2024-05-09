@@ -28,9 +28,7 @@ RDM settings (creating the representations):
     04 -> modelling only paths
     04-5 -> STATE model. only include those tasks that are completely different from all others; i.e. no reversed, no backw.
     04-5-A -> STATE model. only include those tasks that are completely different from all others; i.e. no reversed, no backw. ; EXCLUDING state A
-    
-    05 -> modelling only baths and only rewards to compare them later!
-    
+
 
 GLM ('regression') settings (creating the 'bins'):
     01 - instruction EVs
@@ -52,7 +50,12 @@ GLM ('regression') settings (creating the 'bins'):
 
 @author: Svenja Küchenhoff, 2024
 """
+ 
 
+data_dir = "/Users/student/PycharmProjects/data"
+data_dir_behav = '/Users/student/PycharmProjects/data/raw/sub-01/beh'
+
+import pandas as pd
 import os
 import numpy as np
 import mc
@@ -62,19 +65,19 @@ import sys
 
 # import pdb; pdb.set_trace()
 
-regression_version = '03-4' 
-RDM_version = '05' 
+regression_version = '01' 
+RDM_version = '01' 
 
 if len (sys.argv) > 1:
     subj_no = sys.argv[1]
 else:
-    subj_no = '09'
+    subj_no = '01'
 
 subjects = [f"sub-{subj_no}"]
 temporal_resolution = 10
 
 task_halves = ['1', '2']
-fmriplotting = False # incorrect for 01
+fmriplotting = False
 fmri_save = True
 
 add_run_counts_model = False # this doesn't work with the current analysis
@@ -91,18 +94,21 @@ for sub in subjects:
     sorted_models_split = {}
     configs_dict = {}
     reg_list = []
+
     for task_half in task_halves:
-        data_dir_beh = f"/Users/xpsy1114/Documents/projects/multiple_clocks/data/pilot/{sub}/beh/"
-        RDM_dir = f"/Users/xpsy1114/Documents/projects/multiple_clocks/data/derivatives/{sub}/beh/RDMs_{RDM_version}_glmbase_{regression_version}"
+        # Select the correct file path as a directory for the behavioural .csv file
+        data_dir_beh = f"{data_dir}/{sub}/beh/"
+        RDM_dir = f"{data_dir}/derivatives/{sub}/beh/RDMs_{RDM_version}_glmbase_{regression_version}"
         if os.path.isdir(data_dir_beh):
             print("Running on laptop.")
         else:
-            data_dir_beh = f"/home/fs0/xpsy1114/scratch/data/pilot/{sub}/beh/"
-            RDM_dir = f"/home/fs0/xpsy1114/scratch/data/derivatives/{sub}/beh/RDMs_{RDM_version}_glmbase_{regression_version}"
+            data_dir_beh = f"{data_dir}/{sub}/beh/"
+            RDM_dir = f"{data_dir}/derivatives/{sub}/beh/RDMs_{RDM_version}_glmbase_{regression_version}"
             print(f"Running on Cluster, setting {data_dir_beh} as data directory")
             
-        file = data_dir_beh + f"{sub}_fmri_pt{task_half}.csv"
-        
+        # file = data_dir_behav + f"{sub}_fmri_pt{task_half}.csv"
+        file = "/Users/student/PycharmProjects/data/raw/sub-01/beh" + f"/{sub}_fmri_pt{task_half}.csv"
+
         # crucial step 1: get the behavioural data I need from the subject files.
         configs, rew_list, rew_index, walked_path, steps_subpath_alltasks_empty, subpath_after_steps, timings, regressors = mc.analyse.analyse_MRI_behav.extract_behaviour(file)
 
@@ -181,20 +187,16 @@ for sub in subjects:
                         result_model_dict = mc.simulation.predictions.create_model_RDMs_fmri(curr_trajectory, curr_timings, curr_stepnumber, temporal_resolution = temporal_resolution, plot=False, only_rew = True, only_path= False, split_clock = False)    
                     elif RDM_version in ['04', '04-5-A', '04-A']: # modelling only paths + splitting clocks [new]
                         result_model_dict = mc.simulation.predictions.create_model_RDMs_fmri(curr_trajectory, curr_timings, curr_stepnumber, temporal_resolution = temporal_resolution, plot=False, only_rew = False, only_path = True, split_clock=True)
-                    elif RDM_version in ['05']:
-                        models_from_03_1 = mc.simulation.predictions.create_model_RDMs_fmri(curr_trajectory, curr_timings, curr_stepnumber, temporal_resolution = temporal_resolution, plot=False, only_rew = True, only_path= False, split_clock = False)    
-                        model_from_04 = mc.simulation.predictions.create_model_RDMs_fmri(curr_trajectory, curr_timings, curr_stepnumber, temporal_resolution = temporal_resolution, plot=False, only_rew = False, only_path = True, split_clock=True)
-                        # then put both together:
-                        result_model_dict = {**models_from_03_1, **model_from_04}
-                            
+                    
+                    
                     # now for all models that are creating or not creating the splits models with my default function, this checking should work.
-                    if RDM_version not in ['03-1', '03-2', '03-3', '03-5', '03-5-A','04-5', '04-5-A', '05']:
+                    if RDM_version not in ['03-1', '03-2', '03-3', '03-5', '03-5-A','04-5', '04-5-A']:
                         # test if this function gives the same as the models you want, otherwise break!
                         model_list = list(result_model_dict.keys())
                         if model_list != models_I_want:
                             print('careful! the model dictionary did not output your defined models!')
                             print(f"These are the models you wanted: {models_I_want}. And these are the ones you got: {model_list}")
-                            import pdb; pdb.set_trace()
+                            # import pdb; pdb.set_trace() 
                     
                     # models  need to be concatenated for each run and task
                     if no_run == 0 or (regression_version in ['03-l', '03-4-l'] and no_run == 2):
@@ -204,7 +206,7 @@ for sub in subjects:
                         for model in result_model_dict:
                             repeats_model_dict[model] = np.concatenate((repeats_model_dict[model], result_model_dict[model]), 1)
                 
-                    
+
                 # NEXT STEP: prepare the regression- select the correct regressors, filter keys starting with 'A1_backw'
                 regressors_curr_task = {key: value for key, value in regressors.items() if key.startswith(config)}
                 
@@ -268,15 +270,21 @@ for sub in subjects:
                 # thus, it will also be the same as predicting future rewards, if we rotate it accordingly!
                 # temporally not do this
                 
-                if RDM_version in ['03-1', '03-2', '03-3', '05']:
+                if RDM_version in ['03-1', '03-2', '03-3']:
                     # now do the rotating thing. 
                     all_models_dict['one_future_rew_loc'][config] = np.roll(all_models_dict['location'][config], -1, axis = 1) 
                     all_models_dict['two_future_rew_loc'][config] = np.roll(all_models_dict['location'][config], -2, axis = 1) 
-                    if RDM_version in ['03-1', '03-2', '05']:
+                    if RDM_version in ['03-1', '03-2']:
                         all_models_dict['three_future_rew_loc'][config] = np.roll(all_models_dict['location'][config], -3, axis = 1) 
                     
                     # try something.
-                    all_models_dict['curr-and-future-rew-locs'][config] = np.concatenate((all_models_dict['one_future_rew_loc'][config], all_models_dict['two_future_rew_loc'][config], all_models_dict['three_future_rew_loc'][config]), 0)
+                    all_models_dict['curr-and-future-rew-locs'][config] = np.concatenate(
+                            (
+                        all_models_dict['one_future_rew_loc'][config],
+                        all_models_dict['two_future_rew_loc'][config], 
+                        all_models_dict['three_future_rew_loc'][config]
+                            ),  
+                        0)
                     
         # then, lastly, safe the all_models_dict in the respective task_half.
         models_between_task_halves[task_half] = all_models_dict
@@ -284,20 +292,22 @@ for sub in subjects:
         configs_dict[task_half] = rew_list
   
 
-
-
-    # out of the between-halves loop.
-    sorted_keys_dict = mc.analyse.extract_and_clean.order_task_according_to_rewards(configs_dict)   
     
+    # out of the between-halves loop
     if RDM_version == '01': # I have to work on this one further for the replay analysis (temporal + spatial)
+
+        for model in all_models_dict:
+            pass            
+
         models_between_tasks = mc.analyse.analyse_MRI_behav.similarity_of_tasks(configs_dict) 
         models_sorted_into_splits = models_between_tasks.copy()
-        split = list(models_sorted_into_splits.keys())[0]
         # this doens't work anymore now after the changes!! continue working on it
-   
+        
     elif not RDM_version == '01':
         # first, sort the models into two equivalent halves, just in case this went wrong before.
         # DOUBLE CHECK IF THIS SORTING ACTUALLY WORKS!!!!
+        
+        sorted_keys_dict = mc.analyse.extract_and_clean.order_task_according_to_rewards(configs_dict)
         models_sorted_into_splits = {task_half: {model: {config: "" for config in sorted_keys_dict[task_half]} for model in models_I_want} for task_half in task_halves}
         test = {task_half: {model: "" for model in models_I_want} for task_half in task_halves}
         
@@ -328,7 +338,7 @@ for sub in subjects:
     
     RSM_dict_betw_TH = {}
     for model in models_sorted_into_splits[split]:
-        RSM_dict_betw_TH[model] = mc.simulation.RDMs.within_task_RDM(np.concatenate((models_sorted_into_splits['1'][model], models_sorted_into_splits['2'][model]),1), plotting = False, titlestring= model)
+        RSM_dict_betw_TH[model] = mc.simulation.RDMs.within_task_RDM(np.concatenate((models_sorted_into_splits['1'][model], models_sorted_into_splits['2'][model]),1), plotting = True, titlestring= model)
         # mc.simulation.predictions.plot_without_legends(RSM_dict_betw_TH[model])
         if RDM_version in ['03-5', '03-5-A', '04-5', '04-5-A']:
             if RDM_version in ['03-5','04-5']:
@@ -352,7 +362,7 @@ for sub in subjects:
         corrected_model = (RSM_dict_betw_TH[model] + np.transpose(RSM_dict_betw_TH[model]))/2
         corrected_RSM_dict[model] = corrected_model[0:int(len(corrected_model)/2), int(len(corrected_model)/2):]
    
-    
+
     # just for me. what happens if I add the ['reward_location', 'one_future_rew_loc' ,'two_future_rew_loc', 'three_future_rew_loc']?
     # addition_model = corrected_RSM_dict['reward_location'] + corrected_RSM_dict['one_future_rew_loc'] + corrected_RSM_dict['two_future_rew_loc'] + corrected_RSM_dict['three_future_rew_loc'] 
     
@@ -381,23 +391,22 @@ for sub in subjects:
         if not os.path.exists(RDM_dir):
             os.makedirs(RDM_dir)
         if RDM_version in ['03-5', '03-5-A', '04-5', '04-5-A']:
-            np.save(os.path.join(RDM_dir, "RSM_state_mask_across_halves"), RSM_dict_betw_TH_mask)
-        if RDM_version not in ['01']:    
-            for RDM in corrected_RSM_dict:
-                np.save(os.path.join(RDM_dir, f"RSM_{RDM}_{sub}_fmri_both_halves"), corrected_RSM_dict[RDM])
-        else:
-            for RDM in RSM_dict_betw_TH:
-                np.save(os.path.join(RDM_dir, f"RSM_{RDM}_{sub}_fmri_across_halves"), RSM_dict_betw_TH[RDM])
+            np.save(os.path.join(RDM_dir, f"RSM_state_mask_across_halves"), RSM_dict_betw_TH_mask)
+        for RDM in corrected_RSM_dict:
+            np.save(os.path.join(RDM_dir, f"RSM_{RDM}_{sub}_fmri_both_halves"), corrected_RSM_dict[RDM])
+            
         # also save the regression files
         for model in models_sorted_into_splits['1']:
             np.save(os.path.join(RDM_dir, f"data{model}_{sub}_fmri_both_halves"), np.concatenate((models_sorted_into_splits['1'][model], models_sorted_into_splits['2'][model]),1))
         
         # and lastly, save the order in which I put the RDMs.
-        
+    
+        # save the sorted keys and the regressors.
         with open(f"{RDM_dir}/sorted_keys-model_RDMs.pkl", 'wb') as file:
             pickle.dump(sorted_keys_dict, file)
             
         with open(f"{RDM_dir}/sorted_regs.pkl", 'wb') as file:
             pickle.dump(reg_list, file)
                 
-    
+
+

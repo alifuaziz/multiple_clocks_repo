@@ -72,7 +72,7 @@ for file in filenames:
     plt.title(f'Task Length by Task Config for {file}')
     plt.show()
 
-import pdb; pdb.set_trace()
+# import pdb; pdb.set_trace()
 
 # no 2: plot how long every subpath takes, across participants and separetly per task configuration.
 # filenames = ['00_pilot.csv', '01_pilot.csv', '02_pilot.csv', '03_pilot.csv', '04_pilot.csv', '05_pilot.csv', '06_pilot.csv', '07_pilot.csv', ]

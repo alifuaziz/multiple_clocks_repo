@@ -26,21 +26,6 @@ from datetime import datetime
 
 
 def subpath_files(configs, subpath_after_steps, rew_list, rew_index, steps_subpath_alltasks):
-    """
-    Function construction the subpath_after_steps dictionary
-    
-
-    :returns steps_subpath_alltasks: dict of lists of lists for each task config
-        - list of lists of the number of steps taken between each reward for each repeat of the task config
-        i.e.[[4, 2, 3, 5],
-             [4, 2, 3, 3],
-             [4, 2, 3, 3],
-             [4, 2, 3, 3],
-             [6, 2, 3, 3]]
-        is the number of steps taken between each reward (coin) for each of the 5 repeats of the task 'C1_forw'
-    """
-
-
     for config in configs:
         rew_list[config] = [[int(value) for value in sub_list] for sub_list in rew_list[config][0:4]]
         # next step: create subpath files with rew_index and how many steps there are per subpath.
@@ -90,12 +75,14 @@ def extract_behaviour(file):
     :returns subpath_after_steps
         - Index represents the global index of the steps taken by the agent where reward was obtained
     :returns steps_subpath_alltasks: dict of lists for each task config (e.g.) of the number of steps taken between each reward
-        - see the function subpath_files for more details on what is being returned
+        - ??
     :returns timings: dict of lists for each task config (e.g.) of the global times of the agents steps (w.r.t the start of the experiment)
         - list of global timings that each step was taken by the agent for each task config
     :returns regressors
         - ??
     """
+
+
     # load the two required excel sheets
     df = pd.read_csv(file)
     # the first row is empty so delete to get indices right
@@ -131,7 +118,7 @@ def extract_behaviour(file):
 
     configs = df['config_type'].dropna().unique()
     
-    
+    # Initialised dictionaries
     walked_path = {}
     timings = {}
     rew_list = {}
@@ -139,6 +126,7 @@ def extract_behaviour(file):
     rew_index = {}
     subpath_after_steps = {}
     steps_subpath_alltasks = {}
+    # Intialise the dictionaries with empty lists for each task config
     for config in configs:
         walked_path[config] = []
         timings[config] = []
@@ -207,15 +195,14 @@ def extract_behaviour(file):
     return configs, rew_list, rew_index, walked_path, steps_subpath_alltasks, subpath_after_steps, timings, regressors
 
 
-def models_I_want(RDM_version: str) -> list:
+def models_I_want(RDM_version: str) -> list[str]:
     """
-    :param RDM_version: str : version of the RDMs to be used for the RSA analysis e.g. "01"
+    Functions that returns the models used for creating the model RDMs.
 
-    :return models_I_want: list of models that I want to use for the RSA analysis as a list of strings
-        - e.g. ['direction_presentation', 'execution_similarity', 'presentation_similarity']
+    :return: models_I_want (list) :  of strings 
     """
 
-    if RDM_version in ['01', '01-1']: # 01 doesnt work yet! 
+    if RDM_version in ['01', '01-1']: # 01 doesnt work yet! ??
         models_I_want = ['direction_presentation', 'execution_similarity', 'presentation_similarity']
     elif RDM_version in ['02', '02-A']: #modelling paths + rewards, creating all possible models 
         models_I_want = ['location', 'phase', 'phase_state', 'state', 'task_prog', 'curr_rings_split_clock', 'one_fut_rings_split_clock', 'two_fut_rings_split_clock', 'three_fut_rings_split_clock', 'midnight', 'clocks']
@@ -234,8 +221,11 @@ def models_I_want(RDM_version: str) -> list:
     elif RDM_version in ['04', '04-A']: # only paths. to see if the human brain represents also only those rings anchored at no-reward locations
         models_I_want = ['location', 'phase', 'phase_state', 'state', 'task_prog', 'curr_rings_split_clock', 'one_fut_rings_split_clock', 'two_fut_rings_split_clock', 'three_fut_rings_split_clock', 'midnight_no-rew', 'clocks_no-rew']
     
-    # returns the list 
+    # list of strings to be returned
     return models_I_want
+
+
+
 
 
 def move_files_to_subfolder(folder_path):
@@ -262,17 +252,16 @@ def move_files_to_subfolder(folder_path):
             shutil.move(os.path.join(folder_path, file), subfolder_path)
             print(f"Moved {file} to {subfolder_path}/")
          
+    
+              
+
 
 def print_stuff(string_input):
-    """
-    print the string input
-    """
     print(string_input)
+    
     
 
 def jitter(expected_step_no):
-
-
     # first randomly sample from a gamma distribution
     shape = 5.75 # this is what the mean subpath is supposed to be
     draw = np.random.standard_gamma(shape)
@@ -355,10 +344,6 @@ def create_EV(onset, duration, magnitude, name, folder, TR_at_sec):
 
 # to transform the locations
 def transform_coord(coord, is_x = False, is_y = False):
-    """
-    Converts the coordinates (2d, is_x, is_y) of the agent to a 3x3 grid with 0,0 in the bottom LHS corner
-    """
-
     if is_x:
         if coord == -0.21:
             return 0
@@ -650,8 +635,6 @@ def analyse_pathlength_beh(df):
 
 
 def similarity_of_tasks(reward_per_task_per_taskhalf_dict):
-
-
     # import pdb; pdb.set_trace() 
     
     # first, put the contents of the task-half dict into one.
@@ -712,11 +695,10 @@ def similarity_of_tasks(reward_per_task_per_taskhalf_dict):
                 presentation_similarity[i, j] = 1
     
     
-    # import pdb; pdb.set_trace() 
-    # presentation similarity is a 20 * 80 matrix
+    import pdb; pdb.set_trace() 
+    corrected_RSM_dict = {} # created corrected_RSM_dict 
     np.corrcoef(presentation_similarity[:, :10])
-    # corrected_model = (presentation_similarity[:, :10] + np.transpose(presentation_similarity[:, :10]))/2
-    corrected_model = (presentation_similarity[:, :10] + presentation_similarity[:, :10])/2
+    corrected_model = (presentation_similarity[:, :10] + np.transpose(presentation_similarity[:, :10]))/2
     corrected_RSM_dict[model] = corrected_model[0:int(len(corrected_model)/2), int(len(corrected_model)/2):]
    
         

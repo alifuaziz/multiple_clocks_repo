@@ -137,7 +137,7 @@ for sub in subjects:
         
         # CONTINUE HERE!!
         # also double check glm_04!! pt 2 looks a bit weird????
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         
         # Get RDMs
         

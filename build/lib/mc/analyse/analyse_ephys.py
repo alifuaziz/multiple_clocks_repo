@@ -146,9 +146,9 @@ def reg_per_task_config(task_configs, locations_all, neurons, timings_all, contr
             coefficients_per_trial[trial_no] = results_reg.coef_
             # print(f" Computed betas for run {trial_no} of task {task_config}")
             if sum(results_reg.coef_) > 100:
-                import pdb; pdb.set_trace()
+                # import pdb; pdb.set_trace()
                 
-                # break because this can't be true!
+                break #because this can't be true!
                 
             # then compute contrasts
             # I want to know: [0 0 1], [0 1 0], [1 0 0] and [-1 1 0], [0 -1 1], ....

@@ -45,7 +45,7 @@ continuous_model = 1
 
 
 if average_bin == 1:
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
 
     Data_folder='/Users/xpsy1114/Documents/projects/multiple_clocks/data/ephys_recordings_200423/' 
     # start with a single mouse first.
