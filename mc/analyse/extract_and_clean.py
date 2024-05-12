@@ -12,28 +12,18 @@ import pandas as pd
 import numpy as np
 import mc
 import matplotlib.pyplot as plt
-import scipy.special as sps  
+import scipy.special as sps
+from mc.replay_analysis import utils
 
-
-def print_stuff(string_input):
-    print(string_input)
    
+def order_task_according_to_rewards(reward_per_task_per_taskhalf_dict: dict) -> dict:
+    """
+    - Creates dictionary which contains the task split into two halves (keys '1' and '2') 
+    - The values of the keys are list of 
     
-   
-def flatten_nested_dict(nested_dict):
-    flattened_dict = {}
-    for key, value in nested_dict.items():
-        if isinstance(value, dict):  # If the value is a dictionary, extend the flat dictionary with its items
-            flattened_dict.update(value)
-        else:
-            flattened_dict[key] = value
-    return flattened_dict
- 
-
-   
-def order_task_according_to_rewards(reward_per_task_per_taskhalf_dict):  
+    """
     # import pdb; pdb.set_trace() 
-    rewards_experiment = mc.analyse.extract_and_clean.flatten_nested_dict(reward_per_task_per_taskhalf_dict)
+    rewards_experiment = utils.flatten_nested_dict(reward_per_task_per_taskhalf_dict)
     ordered_config_names = {half: [] for half in reward_per_task_per_taskhalf_dict}  
 
     no_duplicates_list = []    
@@ -53,8 +43,18 @@ def order_task_according_to_rewards(reward_per_task_per_taskhalf_dict):
 
 
 def jitter(expected_step_no):
+    """
+    This function is to create a random jittered path of steps, where the last step is the reward.
+    The final step is twice as long as the average step length.
+
+    Parameters
+    :param expected_step_no: int This the length of the path
+
+    :return: stepsizes: array This is the array of stepsizes as a array of floats defining the stepsize for each step in the path.
+    
+    """
     # first randomly sample from a gamma distribution
-    shape = 5.75 # this is what the mean subpath is supposed to be
+    shape = 5.75 # define shape of gamma distribution
     draw = np.random.standard_gamma(shape)
     
     # then make an array for each step + reward I expect to take
@@ -62,7 +62,7 @@ def jitter(expected_step_no):
     
     # make the last one, the reward, twice as long as the average step
     ave_step = np.mean(step_size_maker)
-    step_size_maker[-1] = ave_step*2
+    step_size_maker[-1] = ave_step * 2
     
     # then multiply the fraction of all step sizes with the actual subpath length
     stepsizes = np.empty(expected_step_no + 1)
@@ -71,7 +71,7 @@ def jitter(expected_step_no):
         
     # stepsizes [-1] will be reward length. if more steps than stepsizes[0:-2], randomly sample.
     
-    return(stepsizes)
+    return (stepsizes)
 
 
     
@@ -114,3 +114,8 @@ def jitter(expected_step_no):
     y = bins**(shape-1) * ((np.exp(-bins/scale))/(sps.gamma(shape) * scale**shape))
     plt.plot(bins, y, linewidth=2, color='r')  
     plt.show()
+
+
+if __name__ == "__main__":
+    print("testing extract_and_clean.py")
+    step_sizes = jitter(3)

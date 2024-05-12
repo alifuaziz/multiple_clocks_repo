@@ -23,6 +23,7 @@ from rsatoolbox.rdm.calc import _build_rdms
 from rsatoolbox.rdm import RDMs
 import shutil
 from datetime import datetime
+import warnings
 
 
 def subpath_files(configs, subpath_after_steps, rew_list, rew_index, steps_subpath_alltasks):
@@ -217,6 +218,9 @@ def models_I_want(RDM_version: str) -> list:
 
     if RDM_version in ['01', '01-1']: # 01 doesnt work yet! 
         models_I_want = ['direction_presentation', 'execution_similarity', 'presentation_similarity']
+    elif RDM_version in ['01-2']: 
+        raise NotImplementedError(f"This version ({RDM_version}) is not implemented yet")
+        models_I_want = []
     elif RDM_version in ['02', '02-A']: #modelling paths + rewards, creating all possible models 
         models_I_want = ['location', 'phase', 'phase_state', 'state', 'task_prog', 'curr_rings_split_clock', 'one_fut_rings_split_clock', 'two_fut_rings_split_clock', 'three_fut_rings_split_clock', 'midnight', 'clocks']
     elif RDM_version in ['03', '03-A', '03-l', '03-e']: # modelling only rewards, splitting clocks within the same function
@@ -237,8 +241,48 @@ def models_I_want(RDM_version: str) -> list:
     # returns the list 
     return models_I_want
 
+def get_no_RDM_conditions(regression_version: str) -> int:
+    """
+    Returns the number of conditions that the RDM will be compared to for the RSA analaysis.
+    This is, therefore, size of the RDM matrix 
 
-def move_files_to_subfolder(folder_path):
+    :param regression_version: str : version of the regression model used for the analysis
+    :return: no_RDM_conditions (int) : number of conditions in the RDM model
+    """
+    if regression_version == '01':
+        no_RDM_conditions = 20 # including all instruction periods. This is the number of separate conditions that will be compared to eachother
+    elif regression_version in ['02', '02-e', '02-l']:
+        no_RDM_conditions = 80 # including all paths and rewards
+    elif regression_version in ['03', '04','03-99', '03-999', '03-9999', '03-l', '03-e']:
+        no_RDM_conditions = 40 # only including rewards or only paths
+    elif regression_version == '03-3': #excluding reward A
+        no_RDM_conditions = 30
+    elif regression_version in ['03-4', '04-4', '03-4-e', '03-4-l']: # only including tasks without double reward locs: A,C,D  and only rewards
+        no_RDM_conditions = 24
+    if regression_version in ['03-4', '04-4'] and RDM_version in ['03-5-A', '02-A', '03-A', '04-A', '04-5-A']: # only TASK A,C,D, only rewards B-C-D
+        no_RDM_conditions = 18
+
+    return no_RDM_conditions
+
+def get_EV_dict(data_dir: str, regression_version: str) -> dict:
+    """
+    Function to read in the EVs for the GLM
+
+    Returns a dictionary of the different events and their respective paths
+    e.g. {'ev_press_EV_1': '/path/to/ev_press_EV_1.nii.gz', ...}
+    
+    """
+
+    pe_path = f"{data_dir}/func/glm_{regression_version}.feat/stats"
+    reading_in_EVs_dict = {}
+    with open(f"{data_dir}/func/EVs_{regression_version}_pt01/task-to-EV.txt", 'r') as file:
+        for line in file:
+            index, name = line.strip().split(' ', 1)
+            reading_in_EVs_dict[name] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
+    return reading_in_EVs_dict
+
+
+def move_files_to_subfolder(folder_path: str):
     # import pdb; pdb.set_trace()
 
     # List all files in the source folder
@@ -263,14 +307,14 @@ def move_files_to_subfolder(folder_path):
             print(f"Moved {file} to {subfolder_path}/")
          
 
-def print_stuff(string_input):
+def print_stuff(string_input: str):
     """
     print the string input
     """
     print(string_input)
     
 
-def jitter(expected_step_no):
+def jitter(expected_step_no: int) -> np.array:
 
 
     # first randomly sample from a gamma distribution
@@ -336,8 +380,10 @@ def jitter(expected_step_no):
     
     
 
-# code snippet to create a regressor
 def create_EV(onset, duration, magnitude, name, folder, TR_at_sec):
+    """
+    code snippet to create a regressor
+    """
     if len(onset) > len(duration):
         onset = onset[:len(duration)]
         magnitude = magnitude[:len(duration)]
@@ -353,7 +399,6 @@ def create_EV(onset, duration, magnitude, name, folder, TR_at_sec):
     return regressor_matrix
 
 
-# to transform the locations
 def transform_coord(coord, is_x = False, is_y = False):
     """
     Converts the coordinates (2d, is_x, is_y) of the agent to a 3x3 grid with 0,0 in the bottom LHS corner
@@ -650,7 +695,13 @@ def analyse_pathlength_beh(df):
 
 
 def similarity_of_tasks(reward_per_task_per_taskhalf_dict):
+    """
+    
+    Notes: 
+    - `corrected_RSM_dict` is a dictionary that will store the corrected RSM for each model
 
+
+    """
 
     # import pdb; pdb.set_trace() 
     
@@ -704,21 +755,23 @@ def similarity_of_tasks(reward_per_task_per_taskhalf_dict):
         if task_name.endswith('backw'):
             presented_rewards[i].reverse()
 
-    
+    # Creating the presentation similarity matrix 
     presentation_similarity = np.zeros((len(all_rewards), len(all_rewards)*4)) # this is -0.012658227848101285 and 1
     for i in range(len(presented_rewards)):
         for j in range(len(presented_rewards)):
             if presented_rewards[i] == presented_rewards[j]:
                 presentation_similarity[i, j] = 1
     
+    # initialise corrected_RSM_dict
+    corrected_RSM_dict = {}
+    # for model in all_models_dict.keys(): # the list of models that want to be analyised, note that that "all_models_dict" is not currently passed to the function
+    for model in ['direction_presentation', 'execution_similarity', 'presentation_similarity']:
+        np.corrcoef(presentation_similarity[:, :10])
+        # corrected_model = (presentation_similarity[:, :10] + np.transpose(presentation_similarity[:, :10]))/2
+        corrected_model = (presentation_similarity[:, :10] + presentation_similarity[:, :10])/2
+        
+        corrected_RSM_dict[model] = corrected_model[0:int(len(corrected_model)/2), int(len(corrected_model)/2):]
     
-    # import pdb; pdb.set_trace() 
-    # presentation similarity is a 20 * 80 matrix
-    np.corrcoef(presentation_similarity[:, :10])
-    # corrected_model = (presentation_similarity[:, :10] + np.transpose(presentation_similarity[:, :10]))/2
-    corrected_model = (presentation_similarity[:, :10] + presentation_similarity[:, :10])/2
-    corrected_RSM_dict[model] = corrected_model[0:int(len(corrected_model)/2), int(len(corrected_model)/2):]
-   
         
     # to create the right format, split this into two task halves again
     # import pdb; pdb.set_trace() 

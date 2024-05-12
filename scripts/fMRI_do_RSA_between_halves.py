@@ -46,23 +46,27 @@ GLM ('regression') settings (creating the 'bins'):
     
 @author: Svenja Küchenhoff, 2024
 """
-
+# Svenja's data folder
+# data_folder = None 
+# Alif's data folder
 data_folder = '/Users/student/PycharmProjects/data'
 
 from tqdm import tqdm
 import numpy as np
-import nibabel as nib
-import os
-import rsatoolbox.rdm as rsr
-import rsatoolbox
-from rsatoolbox.util.searchlight import get_volume_searchlight, get_searchlight_RDMs
-from nilearn.image import load_img
-from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
-import mc
 import pickle
 import sys
 import random
+import os
+from joblib import Parallel, delayed
+
+# RSA specific libraries
+import nibabel as nib
+from nilearn.image import load_img
+import mc.analyse.analyse_MRI_behav as analyse_MRI_behav
+from rsatoolbox.util.searchlight import get_volume_searchlight, get_searchlight_RDMs
+import rsatoolbox.rdm as rsr
+import rsatoolbox
 
 regression_version = '01' 
 RDM_version = '01' 
@@ -85,25 +89,12 @@ task_halves = ['1', '2']
 
 print(f"Now running RSA for RDM version {RDM_version} based on subj GLM {regression_version} for subj {subj_no}")
 
+# get the list of the models to be analysed
+models_I_want = analyse_MRI_behav.models_I_want(RDM_version)
 
-models_I_want = mc.analyse.analyse_MRI_behav.models_I_want(RDM_version)
 
-
-# based on GLM
-if regression_version == '01':
-    no_RDM_conditions = 20 # including all instruction periods
-elif regression_version in ['02', '02-e', '02-l']:
-    no_RDM_conditions = 80 # including all paths and rewards
-elif regression_version in ['03', '04','03-99', '03-999', '03-9999', '03-l', '03-e']:
-    no_RDM_conditions = 40 # only including rewards or only paths
-elif regression_version == '03-3': #excluding reward A
-    no_RDM_conditions = 30
-elif regression_version in ['03-4', '04-4', '03-4-e', '03-4-l']: # only including tasks without double reward locs: A,C,D  and only rewards
-    no_RDM_conditions = 24
-    
-if regression_version in ['03-4', '04-4'] and RDM_version in ['03-5-A', '02-A', '03-A', '04-A', '04-5-A']: # only TASK A,C,D, only rewards B-C-D
-    no_RDM_conditions = 18
-
+# based on GLM, get the number of conditions in the RDM
+no_RDM_conditions = analyse_MRI_behav.get_no_RDM_conditions(RDM_version)
 
     
 for sub in subjects:
@@ -126,7 +117,7 @@ for sub in subjects:
     results_dir = f"{data_dir}/func/RSA_{RDM_version}_glmbase_{regression_version}/results"  
     # if os.path.exists(results_dir):
     #     # move pre-existing files into a different folder.
-    #     mc.analyse.analyse_MRI_behav.move_files_to_subfolder(results_dir)
+    #     analyse_MRI_behav.move_files_to_subfolder(results_dir)
     # get a reference image to later project the results onto. This is usually
     # example_func from half 1, as this is where the data is corrected to.
     ref_img = load_img(f"{data_dir}/func/preproc_clean_01.feat/example_func.nii.gz")
@@ -139,29 +130,19 @@ for sub in subjects:
     # also store 2 dictionaries of the EVs
     if regression_version in ['03-3', '03-4']:
         regression_version = '03'
-    if regression_version in ['04-4']:
-        regression_version = '04'
     if regression_version in ['03-4-e']:
         regression_version = '03-e'
     if regression_version in ['03-4-l']:
         regression_version = '03-l'
-       
-    pe_path_01 = f"{data_dir}/func/glm_{regression_version}_pt01.feat/stats"
-    reading_in_EVs_dict_01 = {}   
-    with open(f"{data_dir}/func/EVs_{regression_version}_pt01/task-to-EV.txt", 'r') as file:
-        for line in file:
-            index, name_ev = line.strip().split(' ', 1)
-            name = name_ev.replace('ev_', '')
-            reading_in_EVs_dict_01[f"{name}_EV_{int(index)+1}"] = os.path.join(pe_path_01, f"pe{int(index)+1}.nii.gz")
-            
-    pe_path_02 = f"{data_dir}/func/glm_{regression_version}_pt02.feat/stats"     
-    reading_in_EVs_dict_02 = {}
-    with open(f"{data_dir}/func/EVs_{regression_version}_pt02/task-to-EV.txt", 'r') as file:
-        for line in file:
-            index, name_ev = line.strip().split(' ', 1)
-            name = name_ev.replace('ev_', '')
-            reading_in_EVs_dict_02[f"{name}_EV_{int(index)+1}"] = os.path.join(pe_path_02, f"pe{int(index)+1}.nii.gz")
+    if regression_version in ['04-4']:
+        regression_version = '04'
     
+    # create dictionary of paths to the EVs for each half of the task
+    # first half
+    reading_in_EVs_dict_01 = analyse_MRI_behav.get_EV_dict(data_dir, regression_version)
+    # second half
+    reading_in_EVs_dict_02 = analyse_MRI_behav.get_EV_dict(data_dir, regression_version)
+
     # Step 1: creating the searchlights
     # mask will define the searchlight positions, in pt01 space because that is 
     # where the functional files have been registered to.
@@ -169,7 +150,7 @@ for sub in subjects:
     mask = load_img(f"{data_dir}/anat/{sub}_T1w_noCSF_brain_mask_bin_func_01.nii.gz")
     mask = mask.get_fdata()  
     # save this file to save time
-    if load_old:
+    if load_old == True:
         with open(f"{RDM_dir}/searchlight_centers.pkl", 'rb') as file:
             centers = pickle.load(file)
         with open(f"{RDM_dir}/searchlight_neighbors.pkl", 'rb') as file:
@@ -189,11 +170,11 @@ for sub in subjects:
         #np.save(f"{RDM_dir}/searchlight_neighbors.npy", neighbors)
             
     # Step 2: loading and computing the data RDMs
-    if load_old:
+    if load_old == True:
         with open(f"{results_dir}/data_RDM.pkl", 'rb') as file:
             data_RDM = pickle.load(file)
         if visualise_RDMs == True:
-            mc.analyse.analyse_MRI_behav.visualise_data_RDM(mni_x=53, mni_y = 30, mni_z= 2, data_RDM_file= data_RDM, mask=mask)
+            analyse_MRI_behav.visualise_data_RDM(mni_x=53, mni_y = 30, mni_z= 2, data_RDM_file= data_RDM, mask=mask)
             
     else:
         data_RDM_file_2d = {}
@@ -217,7 +198,7 @@ for sub in subjects:
                         reading_in_EVs_dict[f"{name}_EV_{index}"] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
             else:           
                 i = -1
-                image_paths[split] = [None] * no_RDM_conditions  # Initialize a list for each half of the dictionary
+                image_paths[split]   = [None] * no_RDM_conditions  # Initialize a list for each half of the dictionary
                 data_RDM_file[split] = [None] * no_RDM_conditions  # Initialize a list for each half of the dictionary
                 for EV_no, task in enumerate(sorted_keys[split]):
                     for regressor_sets in reg_keys:
@@ -252,14 +233,21 @@ for sub in subjects:
 
         
         if RDM_version in ['01']:
+            # "data_RDM_file" is a dictionary with a key for each RDM_version
             data_RDM_file_2d = {}
             data_RDM_file = {}
             data_RDM_file[RDM_version] = [None] * no_RDM_conditions
-            # sort across task_halves
-            for i, task in enumerate(sorted(reading_in_EVs_dict.keys())):
-                if task not in ['ev_press_EV_EV_index']:
-                    image_paths[i] = reading_in_EVs_dict[task]
-                    data_RDM_file[RDM_version][i] = nib.load(image_paths[i]).get_fdata()
+
+            # create list of tasks in the order they are in the EVs
+            EV_dict_keys = list(reading_in_EVs_dict.keys())
+            for task in EV_dict_keys:
+                # remove any tasks from EV_dict_keys that are not conditions that have associated images
+                if any(substring in task for substring in ['ev_press_EV_EV']):
+                    EV_dict_keys.remove(task)
+            # For all remaining conditions, load the images and store them in the data_RDM_file dictionary
+            for task_idx, task in enumerate(EV_dict_keys):
+                image_paths[task_idx] = reading_in_EVs_dict[task]
+                data_RDM_file[RDM_version][task_idx] = nib.load(image_paths[task_idx]).get_fdata()
             # Convert the list to a NumPy array
             data_RDM_file_np = np.array(data_RDM_file[RDM_version])
             # reshape data so we have n_observations x n_voxels
@@ -290,8 +278,8 @@ for sub in subjects:
     # load the data files I created.
     data_dirs = {}
     for model in models_I_want:
-        if RDM_version in ['999', '9999']: # potentially delete?? this is now 03-99 nd 03-999
-            RDM_dir = f"{data_dir}/beh/RDMs_09_glmbase_{regression_version}" # potentially delete??
+        # if RDM_version in ['999', '9999']: # potentially delete?? this is now 03-99 nd 03-999
+        #     RDM_dir = f"{data_dir}/beh/RDMs_09_glmbase_{regression_version}" # potentially delete??
         data_dirs[model]= np.load(os.path.join(RDM_dir, f"data{model}_{sub}_fmri_both_halves.npy")) 
     
     
@@ -300,7 +288,7 @@ for sub in subjects:
     model_RDM_dir = {}
     RDM_my_model_dir = {}
     for model in data_dirs:
-        model_data = mc.analyse.analyse_MRI_behav.prepare_model_data(data_dirs[model], no_RDM_conditions, RDM_version)
+        model_data = analyse_MRI_behav.prepare_model_data(data_dirs[model], no_RDM_conditions, RDM_version)
         if RDM_version in ['01', '01-1']:
             model_RDM_dir[model] = rsr.calc_rdm(model_data, method='correlation', descriptor='conds')
         else:
@@ -320,8 +308,8 @@ for sub in subjects:
         # then compute the location model.
         model_model = rsatoolbox.model.ModelFixed(f"{model}_only", model_RDM_dir[model])
         # Step 4: evaluate the model fit between model and data RDMs.
-        RDM_my_model_dir[model] = Parallel(n_jobs=3)(delayed(mc.analyse.analyse_MRI_behav.evaluate_model)(model_model, d) for d in tqdm(data_RDM, desc=f"running GLM for all searchlights in {model}"))
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=RDM_my_model_dir[model], data_RDM_file=data_RDM, file_path = results_dir, file_name= f"{model}", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
+        RDM_my_model_dir[model] = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(model_model, d) for d in tqdm(data_RDM, desc=f"running GLM for all searchlights in {model}"))
+        analyse_MRI_behav.save_RSA_result(result_file=RDM_my_model_dir[model], data_RDM_file=data_RDM, file_path = results_dir, file_name= f"{model}", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
     
         
     
@@ -335,11 +323,11 @@ for sub in subjects:
     if RDM_version in ['01']:
         instruction_comp_RDM = rsatoolbox.rdm.concat(model_RDM_dir['direction_presentation'], model_RDM_dir['execution_similarity'], model_RDM_dir['presentation_similarity'])
         instruction_comp_model = rsatoolbox.model.ModelWeighted('instruction_comp_RDM', instruction_comp_RDM)
-        results_instruction_comp_model = Parallel(n_jobs=3)(delayed(mc.analyse.analyse_MRI_behav.evaluate_model)(instruction_comp_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - different instruction models'))
+        results_instruction_comp_model = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(instruction_comp_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - different instruction models'))
         
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_instruction_comp_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "DIRECTION-PRESENTATION-combo-instr", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_instruction_comp_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "EXECUTION-SIM-combo-instr", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_instruction_comp_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PRESENTATION-SIM-combo-instr", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_instruction_comp_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "DIRECTION-PRESENTATION-combo-instr", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_instruction_comp_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "EXECUTION-SIM-combo-instr", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_instruction_comp_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PRESENTATION-SIM-combo-instr", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
 
         
      # combo clocks and controls    
@@ -348,13 +336,13 @@ for sub in subjects:
         clocks_midn_states_loc_ph_RDM = rsatoolbox.rdm.concat(model_RDM_dir['clocks'], model_RDM_dir['midnight'], model_RDM_dir['state'], model_RDM_dir['location'], model_RDM_dir['phase'])
         clocks_midn_states_loc_ph_model = rsatoolbox.model.ModelWeighted('clocks_midn_states_RDM', clocks_midn_states_loc_ph_RDM)
         # the first is t, the second beta. [est.tvalues[1:], est.params[1:]]
-        results_clocks_midn_states_loc_ph_model = Parallel(n_jobs=3)(delayed(mc.analyse.analyse_MRI_behav.evaluate_model)(clocks_midn_states_loc_ph_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - clocks vs. phase, midn, state, loc'))
+        results_clocks_midn_states_loc_ph_model = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(clocks_midn_states_loc_ph_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - clocks vs. phase, midn, state, loc'))
         
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCK-combo-cl-mid-st-loc-ph", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "MIDN-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "LOC-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 4, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCK-combo-cl-mid-st-loc-ph", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "MIDN-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "LOC-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 4, ref_image_for_affine_path=ref_img)
 
      # combo clocks and controls
     if RDM_version in ['02', '02-A'] and regression_version in ['03', '03-4', '04', '04-4']: # don't model location and midnight together if reduced to reward times as they are the same.
@@ -362,11 +350,11 @@ for sub in subjects:
         clocks_midn_states_ph_RDM = rsatoolbox.rdm.concat(model_RDM_dir['clocks'], model_RDM_dir['midnight'], model_RDM_dir['state'], model_RDM_dir['phase'])
         clocks_midn_states_ph_model = rsatoolbox.model.ModelWeighted('clocks_midn_states_RDM', clocks_midn_states_ph_RDM)
         # the first is t, the second beta. [est.tvalues[1:], est.params[1:]]
-        results_clocks_midn_states_ph_model = Parallel(n_jobs=3)(delayed(mc.analyse.analyse_MRI_behav.evaluate_model)(clocks_midn_states_ph_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - clocks vs. phase, midn, state')) 
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCK-combo-cl-mid-st-ph", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "MIDN-combo_cl-mid-st-ph", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo_cl-mid-st-ph", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo_cl-mid-st-ph", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
+        results_clocks_midn_states_ph_model = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(clocks_midn_states_ph_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - clocks vs. phase, midn, state')) 
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCK-combo-cl-mid-st-ph", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "MIDN-combo_cl-mid-st-ph", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo_cl-mid-st-ph", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo_cl-mid-st-ph", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
 
     # combo clocks and controls
     if RDM_version == '03' and regression_version in ['02', '04']: # modeling only reward rings
@@ -374,13 +362,13 @@ for sub in subjects:
         clocks_midn_states_loc_ph_RDM = rsatoolbox.rdm.concat(model_RDM_dir['clocks_only-rew'], model_RDM_dir['midnight_only-rew'], model_RDM_dir['state'], model_RDM_dir['location'], model_RDM_dir['phase'])
         clocks_midn_states_loc_ph_model = rsatoolbox.model.ModelWeighted('clocks_midn_states_loc_ph_RDM', clocks_midn_states_loc_ph_RDM)
         # the first is t, the second beta. [est.tvalues[1:], est.params[1:]]
-        results_clocks_midn_states_loc_ph_model = Parallel(n_jobs=3)(delayed(mc.analyse.analyse_MRI_behav.evaluate_model)(clocks_midn_states_loc_ph_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - clocks vs. phase, midn, state, loc'))
+        results_clocks_midn_states_loc_ph_model = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(clocks_midn_states_loc_ph_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - clocks vs. phase, midn, state, loc'))
         
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCKrw-combo-cl-mid-st-loc-ph", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "MIDNrw-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "LOC-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 4, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCKrw-combo-cl-mid-st-loc-ph", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "MIDNrw-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "LOC-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 4, ref_image_for_affine_path=ref_img)
 
      # combo clocks and controls
     if RDM_version == '03' and regression_version in ['03']: # don't model location and midnight together if reduced to reward times as they are the same.
@@ -388,23 +376,23 @@ for sub in subjects:
         clocks_midn_states_loc_ph_RDM = rsatoolbox.rdm.concat(model_RDM_dir['clocks_only-rew'], model_RDM_dir['midnight_only-rew'], model_RDM_dir['state'], model_RDM_dir['phase'])
         clocks_midn_states_loc_ph_model = rsatoolbox.model.ModelWeighted('clocks_midn_states_loc_ph_RDM', clocks_midn_states_loc_ph_RDM)
         # the first is t, the second beta. [est.tvalues[1:], est.params[1:]]
-        results_clocks_midn_states_loc_ph_model = Parallel(n_jobs=3)(delayed(mc.analyse.analyse_MRI_behav.evaluate_model)(clocks_midn_states_loc_ph_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - clocks vs. phase, midn, state, loc'))
+        results_clocks_midn_states_loc_ph_model = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(clocks_midn_states_loc_ph_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - clocks vs. phase, midn, state, loc'))
         
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCKrw-combo-cl-mid-st-ph", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "MIDNrw-combo_cl-mid-st-ph", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo_cl-mid-st-ph", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo_cl-mid-st-ph", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCKrw-combo-cl-mid-st-ph", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "MIDNrw-combo_cl-mid-st-ph", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo_cl-mid-st-ph", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo_cl-mid-st-ph", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
         
      # combo clocks and controls
     if RDM_version == '03-1' and regression_version in ['03', '03-4', '03-l', '03-e']:
         added_rew_locs_loc_ph_st_RDM = rsatoolbox.rdm.concat(model_RDM_dir['curr-and-future-rew-locs'], model_RDM_dir['location'], model_RDM_dir['phase'], model_RDM_dir['state'])
         added_rew_locs_loc_ph_st_model = rsatoolbox.model.ModelWeighted('added_rew_locs_loc_ph_st_RDM', added_rew_locs_loc_ph_st_RDM)
-        results_added_rew_locs_loc_ph_st_model = Parallel(n_jobs=3)(delayed(mc.analyse.analyse_MRI_behav.evaluate_model)(added_rew_locs_loc_ph_st_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - current/fut rew locs clock vs. phase, state, loc'))
+        results_added_rew_locs_loc_ph_st_model = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(added_rew_locs_loc_ph_st_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - current/fut rew locs clock vs. phase, state, loc'))
         
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_added_rew_locs_loc_ph_st_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCKrewloc-combo-clrw-loc-ph-st", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_added_rew_locs_loc_ph_st_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "LOC-combo-clrw-loc-ph-st", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_added_rew_locs_loc_ph_st_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo-clrw-loc-ph-st", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_added_rew_locs_loc_ph_st_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo-clrw-loc-ph-st", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_added_rew_locs_loc_ph_st_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCKrewloc-combo-clrw-loc-ph-st", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_added_rew_locs_loc_ph_st_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "LOC-combo-clrw-loc-ph-st", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_added_rew_locs_loc_ph_st_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo-clrw-loc-ph-st", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_added_rew_locs_loc_ph_st_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo-clrw-loc-ph-st", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
 
     
     # combo clocks and controls
@@ -413,49 +401,48 @@ for sub in subjects:
         clocks_midn_states_loc_ph_RDM = rsatoolbox.rdm.concat(model_RDM_dir['clocks_no-rew'], model_RDM_dir['midnight_no-rew'], model_RDM_dir['state'], model_RDM_dir['location'], model_RDM_dir['phase'])
         clocks_midn_states_loc_ph_model = rsatoolbox.model.ModelWeighted('clocks_midn_states_loc_ph_RDM', clocks_midn_states_loc_ph_RDM)
         # the first is t, the second beta. [est.tvalues[1:], est.params[1:]]
-        results_clocks_midn_states_loc_ph_model = Parallel(n_jobs=3)(delayed(mc.analyse.analyse_MRI_behav.evaluate_model)(clocks_midn_states_loc_ph_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - clocks vs. phase, midn, state, loc'))
+        results_clocks_midn_states_loc_ph_model = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(clocks_midn_states_loc_ph_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - clocks vs. phase, midn, state, loc'))
         
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCKnorw-combo-cl-mid-st-loc-ph", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "MIDNnorw-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "LOC-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 4, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CLOCKnorw-combo-cl-mid-st-loc-ph", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "MIDNnorw-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "LOC-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_clocks_midn_states_loc_ph_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "PHASE-combo_cl-mid-st-loc-ph", mask=mask, number_regr = 4, ref_image_for_affine_path=ref_img)
 
     # combo split clocks
     if RDM_version in ['02', '03', '04', '02-A']:
         # second: split clock: now/ midnight; one future, two future, three future
         split_clocks_RDM = rsatoolbox.rdm.concat(model_RDM_dir['curr_rings_split_clock'], model_RDM_dir['one_fut_rings_split_clock'], model_RDM_dir['two_fut_rings_split_clock'], model_RDM_dir['three_fut_rings_split_clock'])
         split_clocks_model = rsatoolbox.model.ModelWeighted('split_clocks_RDM', split_clocks_RDM)
-        results_split_clocks_combo_model = Parallel(n_jobs=3)(delayed(mc.analyse.analyse_MRI_behav.evaluate_model)(split_clocks_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - split clocks'))
+        results_split_clocks_combo_model = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(split_clocks_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - split clocks'))
         
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_split_clocks_combo_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CURR-RINGS_combo_split_clock", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_split_clocks_combo_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "ONE-FUTR-RINGS_combo_split_clockh", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_split_clocks_combo_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "TWO-FUTR-RINGS_combo_split_clock", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_split_clocks_combo_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "THRE-FUTR-RINGS_combo_split_clock", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_split_clocks_combo_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CURR-RINGS_combo_split_clock", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_split_clocks_combo_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "ONE-FUTR-RINGS_combo_split_clockh", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_split_clocks_combo_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "TWO-FUTR-RINGS_combo_split_clock", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_split_clocks_combo_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "THRE-FUTR-RINGS_combo_split_clock", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
 
     # combo split clocks    
     if RDM_version in ['03-1'] and regression_version in ['03', '03-4','03-l', '03-e']:
         split_clocks_RDM = rsatoolbox.rdm.concat(model_RDM_dir['location'], model_RDM_dir['one_future_rew_loc'], model_RDM_dir['two_future_rew_loc'], model_RDM_dir['three_future_rew_loc'])
         split_clocks_model = rsatoolbox.model.ModelWeighted('split_clocks_RDM', split_clocks_RDM)
         
-        results_current_and_all_future_rew_model = Parallel(n_jobs=3)(delayed(mc.analyse.analyse_MRI_behav.evaluate_model)(split_clocks_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - split clocks after regression'))
+        results_current_and_all_future_rew_model = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(split_clocks_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - split clocks after regression'))
         
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CURR_REW-combo_split-clock", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "ONE-FUT-REW_combo_split-clock", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "TWO-FUT-REW_combo_split-clock", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "THREE-FUT-REW_combo_split-clock", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CURR_REW-combo_split-clock", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "ONE-FUT-REW_combo_split-clock", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "TWO-FUT-REW_combo_split-clock", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "THREE-FUT-REW_combo_split-clock", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
         
-
     # combo split clocks with state to control
     if RDM_version in ['03-1'] and regression_version in ['03', '03-4','03-l', '03-e']:
         split_clocks_state_RDM = rsatoolbox.rdm.concat(model_RDM_dir['location'], model_RDM_dir['one_future_rew_loc'], model_RDM_dir['two_future_rew_loc'], model_RDM_dir['three_future_rew_loc'], model_RDM_dir['state'])
         split_clocks_state_model = rsatoolbox.model.ModelWeighted('split_clocks_RDM', split_clocks_state_RDM)
         
-        results_current_and_all_future_rew_state_model = Parallel(n_jobs=3)(delayed(mc.analyse.analyse_MRI_behav.evaluate_model)(split_clocks_state_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - split clocks after regression plus state'))
+        results_current_and_all_future_rew_state_model = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(split_clocks_state_model, d) for d in tqdm(data_RDM, desc='running GLM for all searchlights in combo model - split clocks after regression plus state'))
         
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_state_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CURR_REW-combo_split-clock-state", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_state_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "ONE-FUT-REW_combo_split-clock-state", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_state_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "TWO-FUT-REW_combo_split-clock-state", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_state_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "THREE-FUT-REW_combo_split-clock-state", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
-        mc.analyse.analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_state_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE_combo_split-clock-state", mask=mask, number_regr = 4, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_state_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "CURR_REW-combo_split-clock-state", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_state_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "ONE-FUT-REW_combo_split-clock-state", mask=mask, number_regr = 1, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_state_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "TWO-FUT-REW_combo_split-clock-state", mask=mask, number_regr = 2, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_state_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "THREE-FUT-REW_combo_split-clock-state", mask=mask, number_regr = 3, ref_image_for_affine_path=ref_img)
+        analyse_MRI_behav.save_RSA_result(result_file=results_current_and_all_future_rew_state_model, data_RDM_file=data_RDM, file_path = results_dir, file_name= "STATE_combo_split-clock-state", mask=mask, number_regr = 4, ref_image_for_affine_path=ref_img)
         

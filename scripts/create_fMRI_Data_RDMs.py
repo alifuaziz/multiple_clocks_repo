@@ -52,6 +52,10 @@ import mc
 import matplotlib.pyplot as plt
 
 # import pdb; pdb.set_trace()
+# define the data folder
+
+data_folder = '/Users/student/PycharmProjects/data'
+# data_folder = '/Users/xpsy1114/Documents/projects/multiple_clocks/data'
 
 subjects = ['sub-01']
 task_halves = ['1', '2']
@@ -59,8 +63,9 @@ RDM_version = '01'
 no_RDM_conditions = 80
 # careful this still doesnt work in row 74 for the pattern thingy
 
+
 for sub in subjects:
-    data_dir = f"/Users/xpsy1114/Documents/projects/multiple_clocks/data/derivatives/{sub}"
+    data_dir = data_folder + f"/derivatives/{sub}"
     RDM_dir = f"{data_dir}/beh/RDMs_{RDM_version}"
     for task_half in task_halves:
         fmri_data_dir = f"{data_dir}/func/preproc_clean_0{task_half}.feat"
@@ -71,7 +76,7 @@ for sub in subjects:
         
         
         # Prepare searchlight positions
-        mask = load_img(f"/Users/xpsy1114/Documents/projects/multiple_clocks/data/derivatives/{sub}/func/mask_0{task_half}_mask.nii.gz")
+        mask = load_img(data_folder + f"/derivatives/{sub}/func/mask_0{task_half}_mask.nii.gz")
         mask = mask.get_fdata()
         
         # ok for some reason this doenst work
@@ -85,7 +90,7 @@ for sub in subjects:
         centers, neighbors = get_volume_searchlight(mask, radius=3, threshold=0.5)
         
         
-        pe_path = f"/Users/xpsy1114/Documents/projects/multiple_clocks/data/derivatives/sub-01/func/glm_04_pt0{task_half}.feat/stats"
+        pe_path = data_folder + f"/derivatives/sub-01/func/glm_04_pt0{task_half}.feat/stats"
         
         # Loop through files in the folder
         # define the naming conventions in this folder
@@ -139,9 +144,7 @@ for sub in subjects:
         # also double check glm_04!! pt 2 looks a bit weird????
         # import pdb; pdb.set_trace()
         
-        # Get RDMs
-        
-        
+        # Get RDMs        
         data_RDM = get_searchlight_RDMs(data_RDM_file_2d, centers, neighbors, image_value, method='correlation')
         
         # then load the data RDMs.

@@ -253,12 +253,7 @@ def move_files_to_subfolder(folder_path):
             print(f"Moved {file} to {subfolder_path}/")
          
     
-              
-
-
-def print_stuff(string_input):
-    print(string_input)
-    
+  
     
 
 def jitter(expected_step_no):
