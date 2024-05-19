@@ -12,44 +12,47 @@ create fMRI data RDMs
 import numpy as np
 import nibabel as nib
 import os
+from os import path, makedirs
 import re
-from rsatoolbox.inference import eval_fixed
-from rsatoolbox.model import ModelFixed
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import pickle
+from joblib import Parallel, delayed
+from glob import glob
+
+
+# NI learn
+from nilearn.image import resample_to_img
+from nilearn.image import load_img
+from nilearn.masking import compute_brain_mask
+from nilearn.image import new_img_like
+from nilearn import plotting
+from nilearn.glm.contrasts import expression_to_contrast_vector, compute_contrast
+
+# RSA Tool Box
 import rsatoolbox.rdm as rsr
 import rsatoolbox.data as rsd
 import rsatoolbox
-from nilearn.image import resample_to_img
+from rsatoolbox.model import ModelFixed
+from rsatoolbox.inference import eval_fixed
 from rsatoolbox.util.searchlight import get_volume_searchlight, get_searchlight_RDMs, evaluate_models_searchlight
 from rsatoolbox.util.searchlight import get_volume_searchlight
 from rsatoolbox.data.dataset import Dataset
-from nilearn.image import load_img
-from nilearn.masking import compute_brain_mask
-from nilearn import plotting
 from rsatoolbox.rdm.calc import calc_rdm
 from rsatoolbox.rdm import RDMs
-import pickle
-# from rich.progress import track
-from os import path, makedirs
-#import fire
-from nilearn.glm.contrasts import expression_to_contrast_vector, compute_contrast
-from joblib import Parallel, delayed
-
-import numpy as np
-import matplotlib.pyplot as plt
-from nilearn.image import new_img_like
-import pandas as pd
-import nibabel as nib
-import seaborn as sns
-from nilearn import plotting
 from rsatoolbox.inference import eval_fixed
 from rsatoolbox.model import ModelFixed
-from rsatoolbox.rdm import RDMs
-from glob import glob
-from rsatoolbox.util.searchlight import get_volume_searchlight, get_searchlight_RDMs, evaluate_models_searchlight
-
+# from rich.progress import track
+#import fire
 
 import mc
-import matplotlib.pyplot as plt
+
+
+
+
+
+
 
 # import pdb; pdb.set_trace()
 # define the data folder
@@ -80,7 +83,7 @@ for sub in subjects:
         mask = mask.get_fdata()
         
         # ok for some reason this doenst work
-        # CONTINUE HERE!!!
+        # CONTINUE HERE!!! 
         # resample the 
         # resampled_image = resample_to_img(mask, ref_img)
         
@@ -132,7 +135,7 @@ for sub in subjects:
         # for x, im in enumerate(image_paths):
         #     data[x] = nib.load(im).get_fdata()
             
-        # STEP 2: get RDM for each voxel
+    # STEP 2: get RDM for each voxel 
         # reshape data so we have n_observastions x n_voxels
         data_RDM_file_2d = data_RDM_file.reshape([data_RDM_file.shape[0], -1])
         data_RDM_file_2d = np.nan_to_num(data_RDM_file_2d) # now this is 80timepoints x 153594 voxels

@@ -47,6 +47,7 @@ import matplotlib.pyplot as plt
 from numpy import pi
 from matplotlib.gridspec import GridSpec
 import mc
+# import mc.simulation.predictions 
 import scipy.signal
 from matplotlib.patches import Circle
 import scipy
@@ -1857,10 +1858,6 @@ def set_location_ephys(walked_path, reward_fields, grid_size = 3, plotting = Fal
 
 
 
-
-
-
-
 ##############################################
 ############### PART 4 #######################
 ############# fMRI MODELS ###################
@@ -2439,6 +2436,10 @@ def create_counting_reward_models_fmri(dict_config_by_reward):
 
 
 def create_instruction_model(rewards_of_task, trial_type, grid_size = 3, fire_radius = 0.25):
+    """
+    Creates
+    """
+
     #import pdb; pdb.set_trace()
 
     reward_fields = []

@@ -153,7 +153,7 @@ def get_searchlight_RDMs(data_2d, centers, neighbors, events,
         # loop over chunks
         n_conds = len(np.unique(events))
         RDM = np.zeros((n_centers, n_conds * (n_conds - 1) // 2))
-        for chunks in tqdm(chunked_center, desc='Calculating RDMs...'):
+        for chunks in tqdm(chunked_center, desc='Calculating Searchlight RDMs...'):
             center_data = []
             for c in chunks:
                 # grab this center and neighbors

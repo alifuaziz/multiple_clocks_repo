@@ -4,7 +4,7 @@
 Created on Mon Oct 30 15:25:55 2023
 creates the EVs for the RDM conditions.
 
-This is the first script that has to be run on the behavioural data to rund the RSA.
+This is the first script that has to be run on the behavioural data to run the RSA.
 As an input, it requires the complete behavioural result file (to extract the TR), 
 and the custom-created one (for the rest of the analysis).
 One needs to set the subject list it needs to run for, the task-halves, which EVs
@@ -97,8 +97,9 @@ analyse_behav = True
 for sub in subjects:
     for task_half in task_halves:
         data_dir_beh = f"/Users/xpsy1114/Documents/projects/multiple_clocks/data/pilot/{sub}/beh/"
-        funcDir = f"/Users/xpsy1114/Documents/projects/multiple_clocks/data/derivatives/{sub}/func"
-        analysisDir = "/Users/xpsy1114/Documents/projects/multiple_clocks/multiple_clocks_repo/mc/fmri_analysis"
+        funcDir =      f"/Users/xpsy1114/Documents/projects/multiple_clocks/data/derivatives/{sub}/func"
+        analysisDir =   "/Users/xpsy1114/Documents/projects/multiple_clocks/multiple_clocks_repo/mc/fmri_analysis"
+        
         if os.path.isdir(data_dir_beh):
             print("Running on laptop.")
         else:

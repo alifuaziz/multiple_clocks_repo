@@ -261,13 +261,17 @@ for sub in subjects:
         data_conds = np.reshape(np.tile((np.array(['cond_%02d' % x for x in np.arange(no_RDM_conditions)])), (1,2)).transpose(),2*no_RDM_conditions)  
         # now prepare the data RDM file. 
         # final data RDM file; 
-        if RDM_version in ['01', '01-1']:
+        if RDM_version in ['01-1']:
             data_conds = np.reshape(np.tile((np.array(['cond_%02d' % x for x in np.arange(no_RDM_conditions)])), (1)).transpose(),no_RDM_conditions)  
             data_RDM = get_searchlight_RDMs(data_RDM_file_2d, centers, neighbors, data_conds, method='correlation')
+        
         else:
-            # this is defining both task halves/ runs: 0 is first half, the second one is 1s
-            sessions = np.concatenate((np.zeros(int(data_RDM_file['1'].shape[0])), np.ones(int(data_RDM_file['2'].shape[0]))))  
-            # for all other cases, cross correlated between task-halves.
+        # this is defining both task halves/ runs: 0 is first half, the second one is 1s
+            sessions = np.concatenate((np.zeros(int(data_RDM_file['1'].shape[0])), 
+                                        np.ones(int(data_RDM_file['2'].shape[0]))))  
+            # sessions = np.concatenate((np.zeros(int(10)), 
+            #                             np.ones(int(10))))  
+        # for all other cases, cross correlated between task-halves.
             data_RDM = get_searchlight_RDMs(data_RDM_file_2d, centers, neighbors, data_conds, method='crosscorr', cv_descr=sessions)
             # save  so that I don't need to recompute - or don't save bc it's massive
             # with open(f"{results_dir}/data_RDM.pkl", 'wb') as file:
@@ -288,6 +292,7 @@ for sub in subjects:
     model_RDM_dir = {}
     RDM_my_model_dir = {}
     for model in data_dirs:
+        # From the neuron models, returns the Dataset object that is put into the calc_rdm function to return the RDM object
         model_data = analyse_MRI_behav.prepare_model_data(data_dirs[model], no_RDM_conditions, RDM_version)
         if RDM_version in ['01', '01-1']:
             model_RDM_dir[model] = rsr.calc_rdm(model_data, method='correlation', descriptor='conds')
@@ -310,9 +315,7 @@ for sub in subjects:
         # Step 4: evaluate the model fit between model and data RDMs.
         RDM_my_model_dir[model] = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(model_model, d) for d in tqdm(data_RDM, desc=f"running GLM for all searchlights in {model}"))
         analyse_MRI_behav.save_RSA_result(result_file=RDM_my_model_dir[model], data_RDM_file=data_RDM, file_path = results_dir, file_name= f"{model}", mask=mask, number_regr = 0, ref_image_for_affine_path=ref_img)
-    
-        
-    
+       
     
     # second, combo models.
     # I am interested in:

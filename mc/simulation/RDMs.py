@@ -8,82 +8,158 @@ Created on Fri Jan 20 18:04:41 2023
 This script defines functions for creating RDMs and plotting them.
 """
 
+import mc.analyse
 import pandas as pd
 import seaborn as sn
 from matplotlib import pyplot as plt
 import numpy as np
-import mc
 import scipy
 from sklearn.linear_model import LinearRegression
 from scipy import stats
 import statsmodels.api as sm
 import colormaps as cmaps
 
-def plot_RDMs(RDM_dict, no_tasks, save_dir = None, string_for_ticks = None):
+
+import mc
+# import mc.replay_analysis.functions.utils as utils
+
+
+def plot_RDMs(RDM_dict: dict, 
+              save_dir = None, 
+              string_for_ticks = None):
+    """
+    Plots the RDMs in the dictionary RDM_dict.
+    """
+    # for each RDM in the dictionary, plot the RDM
     for RDM in RDM_dict:
-        # import pdb; pdb.set_trace()
-        indexline_after = int(len(RDM_dict[RDM])/no_tasks)
+        # figure size
         fig, ax = plt.subplots(figsize=(5,4))
+        plt.tight_layout()
+        # set colormap
         cmaps.BlueYellowRed
         cmap = plt.get_cmap('BlueYellowRed')
+        
         # Set the upper triangle to be empty
         corr_mat = RDM_dict[RDM]
-        
         corr_mat[np.triu_indices(int(len(RDM_dict[RDM])), k=1)] = np.nan
-        im = ax.imshow(corr_mat, cmap=cmap, interpolation = 'none', aspect = 'equal', vmin=-1, vmax=1); 
-        for i in range(indexline_after-1,int(len(RDM_dict[RDM])),indexline_after):
-            ax.axhline(i+0.5, color='white', linewidth=1)
-            ax.axvline(i+0.5, color='white', linewidth=1)
-            
-        # #Add a colorbar to the right of the plot with a colormap toolbox
-        # divider = make_axes_locatable(ax)
-        # cax = divider.append_axes("right", size="5%", pad=0.1)
-        # cbar = fig.colorbar(im, cax=cax)
-        # cbar.set_label('Correlation', rotation=270, labelpad=15)
-        
+
+        # plot the RDM
+        im = ax.imshow(corr_mat, cmap=cmap, interpolation = 'none', aspect = 'equal', vmin=-1, vmax=1);
+
         # Set x-axis and y-axis ticks and labels
-        if indexline_after == 1:
-            ticks = np.arange(indexline_after-1, int(len(RDM_dict[RDM])), indexline_after)
-        else:   
-            ticks = np.arange(indexline_after/2, int(len(RDM_dict[RDM])), indexline_after)
-        ax.set_xticks(ticks)
-        ax.set_yticks(ticks)
-        if string_for_ticks == None:
-            ax.set_xticklabels(['Task {}'.format(int(i // indexline_after + 1)) for i in ticks], rotation=45, ha = 'right', fontsize=16)
-            ax.set_yticklabels(['Task {}'.format(int(i // indexline_after + 1)) for i in ticks], fontsize=16)
-        else:
-            ax.set_xticklabels(string_for_ticks, rotation=45, ha = 'right', fontsize=16)
-            ax.set_yticklabels(string_for_ticks, fontsize=16)
+        labels = string_for_ticks
+        # x-axis
+        ax.set_xticks(np.arange(0, len(labels)))
+        ax.set_xticklabels(labels, rotation=45, ha = 'right', fontsize=16)
+        # y-axis
+        ax.set_yticks(np.arange(0, len(labels)))
+        ax.set_yticklabels(labels, fontsize=16)
 
-
-                
-        # Set axis labels and title
+        # Set title
         ax.set_title(f"Model RDM for {RDM} model", fontsize=18)
-        
+
         # Adjust the appearance of ticks and grid lines
         ax.grid(False)
         cbar = ax.figure.colorbar(im, ax=ax)
         cbar.ax.set_ylabel("Pearson's r", rotation=-90, va="bottom")
-        
-        
-        # Adjust the layout to prevent cutoff of labels and colorbar
-        plt.tight_layout()
-        if save_dir:
+
+        if save_dir == True:
             fig.savefig(f"{save_dir}{RDM}.png", dpi=300, bbox_inches='tight')
             fig.savefig(f"{save_dir}{RDM}.tiff", dpi=300, bbox_inches='tight')
+
+
+        # # import pdb; pdb.set_trace()
+        # indexline_after = int(len(RDM_dict[RDM])/no_tasks)
+        # fig, ax = plt.subplots(figsize=(5,4))
+        # cmaps.BlueYellowRed
+        # cmap = plt.get_cmap('BlueYellowRed')
+        # # Set the upper triangle to be empty
+        # corr_mat = RDM_dict[RDM]
+        # corr_mat[np.triu_indices(int(len(RDM_dict[RDM])), k=1)] = np.nan
+
+        # im = ax.imshow(corr_mat, cmap=cmap, interpolation = 'none', aspect = 'equal', vmin=-1, vmax=1); 
+        # # for i in range(indexline_after-1,int(len(RDM_dict[RDM])),indexline_after):
+        # #     ax.axhline(i+0.5, color='white', linewidth=1)
+        # #     ax.axvline(i+0.5, color='white', linewidth=1)
+            
+        # # #Add a colorbar to the right of the plot with a colormap toolbox
+        # # divider = make_axes_locatable(ax)
+        # # cax = divider.append_axes("right", size="5%", pad=0.1)
+        # # cbar = fig.colorbar(im, cax=cax)
+        # # cbar.set_label('Correlation', rotation=270, labelpad=15)
         
+        # # Set x-axis and y-axis ticks and labels
+        # if indexline_after == 1:
+        #     ticks = np.arange(indexline_after-1, int(len(RDM_dict[RDM])), indexline_after)
+        # else:   
+        #     ticks = np.arange(indexline_after/2, int(len(RDM_dict[RDM])), indexline_after)
+        # ax.set_xticks(ticks)
+        # ax.set_yticks(ticks)
+        # if string_for_ticks == None:
+        #     ax.set_xticklabels(['Task {}'.format(int(i // indexline_after + 1)) for i in ticks], rotation=45, ha = 'right', fontsize=16)
+        #     ax.set_yticklabels(['Task {}'.format(int(i // indexline_after + 1)) for i in ticks], fontsize=16)
+        # else:
+        #     ax.set_xticklabels(string_for_ticks, rotation=45, ha = 'right', fontsize=16)
+        #     ax.set_yticklabels(string_for_ticks, fontsize=16)
+
+
+                
+        # # Set axis labels and title
+        # ax.set_title(f"Model RDM for {RDM} model", fontsize=18)
+        
+        # # Adjust the appearance of ticks and grid lines
+        # ax.grid(False)
+        # cbar = ax.figure.colorbar(im, ax=ax)
+        # cbar.ax.set_ylabel("Pearson's r", rotation=-90, va="bottom")
+        
+        
+        # # Adjust the layout to prevent cutoff of labels and colorbar
+        # plt.tight_layout()
+
+        
+
+
+def construct_within_task_RSM(neuron_activation_matrix,
+                              SIMILARITY_MEASURE = 'pearson',
+                              ax = None, 
+                              plotting = False, 
+                              titlestring = None, 
+                              intervalline = None,
+                              neural_model = True):
+    """
+    Computes the correlation Matrix of the neuron_activation_matrix and plots it as a Representational Similarity Matrix (RSM).
+
+    Parameters
+    :param activation_matrix: the model of the activations of the neurons in the brain for each condition
+    :param CORRELATION_TYPE: The type of correlation to be computed. Default is 'pearson'.
+    :param ax:
+    :param plotting: Would you like to plot the RSM? Default is False.
+    :param titlestring: Title of plot
+    :param intervalline: 
+    :param neural_model: Using the neural activation model to compute the RSM. Default is True. If false, a model RDM is created instead.
     
-    
-    
-    
-    
-def within_task_RDM(activation_matrix, ax=None, plotting = False, titlestring = None, intervalline= None):
+    Returns
+    :return RSM: Representational Similarity Matrix of the actviation matrix
+    """
     # import pdb; pdb.set_trace()
-    activation_matrix = np.nan_to_num(activation_matrix)
-    RSM = np.corrcoef(activation_matrix.T) # pairwise pearson corr of columns, excluding NA/nulls
-    # replace nans with 0s afterwards
+    
+    # 1. Convert nans to numbers, so they can be used to make correlation matrix
+    neuron_activation_matrix = np.nan_to_num(neuron_activation_matrix)
+
+    # 2. Compute the correlation matrix
+    if SIMILARITY_MEASURE == 'pearson':
+        RSM = np.corrcoef(neuron_activation_matrix.T) # pairwise pearson corr of columns, excluding NA/nulls
+    elif SIMILARITY_MEASURE == "euclidean":
+        # utils.create_similarity_matrix(neuron_activation_matrix, SIMILARITY_MEASURE)
+        mc.replay_analysis.functions.utils.similarity_measure(neuron_activation_matrix, neuron_activation_matrix, SIMILARITY_MEASURE)
+    else:
+        raise ValueError(f'Similarity measure {SIMILARITY_MEASURE} not recognized')
+
+    # 
+
     # there will be nans in the RSM if the variance in one row is the same > division by 0
     RSM = np.nan_to_num(RSM)
+
     # from Nili et al., 2014: 
         # "Popular distance measures are the correlation distance (1 minus the Pearson correlation, 
         # "computed across voxels or sites of the two activity patterns), the Euclidean distance 
@@ -91,9 +167,19 @@ def within_task_RDM(activation_matrix, ax=None, plotting = False, titlestring = 
         # "distance (which is the Euclidean distance measured after linearly recoding the space so as to whiten the noise)."
     # RDM = np.ones((len(RSM), len(RSM)))
     # RDM = RDM - RSM
+    
+
+
+    # if neural_model == False:
+    #     # create a model RDM
+    #     EVs = rdm_models.initilaize_EVs()
+    #     RSM = rdm_models.create_execution_RSM(EVs)
+    #     return RSM
+    
+
+
     if plotting == True: 
     
-        
         if ax is None:
             plt.figure()
             ax = plt.axes()   
@@ -101,7 +187,7 @@ def within_task_RDM(activation_matrix, ax=None, plotting = False, titlestring = 
         plt.title(f'{titlestring}')
         if intervalline:
             intervalline = int(intervalline)
-            for interval in range(0, len(activation_matrix[0]), intervalline):
+            for interval in range(0, len(neuron_activation_matrix[0]), intervalline):
                 plt.axvline(interval, color='white', ls='dashed')
         # sn.heatmap(corr_matrix, annot = False)
     return RSM
@@ -296,6 +382,10 @@ def corr_matrices_kendall(matrix_one, matrix_two, exclude_diag = True):
     return coef
 
 def corr_matrices_pearson(matrix_one, matrix_two, no_tasks = None, mask_within = False, exclude_diag = True):
+    """
+
+    
+    """
     # import pdb; pdb.set_trace()
     import numpy.ma as ma
     if mask_within == True:

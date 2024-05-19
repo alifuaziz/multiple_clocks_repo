@@ -21,6 +21,7 @@ import statsmodels.api as sm
 import rsatoolbox.data as rsd
 from rsatoolbox.rdm.calc import _build_rdms
 from rsatoolbox.rdm import RDMs
+from rsatoolbox.model.model import ModelFixed
 import shutil
 from datetime import datetime
 
@@ -499,25 +500,41 @@ def save_RSA_result(result_file, data_RDM_file, file_path, file_name, mask, numb
     nib.save(p_result_brain_nifti, p_result_brain_file)
 
 
-def evaluate_model(model, data):
-    # import pdb; pdb.set_trace()
+def evaluate_model(
+        model: ModelFixed,
+        data: RDMs
+        ):
+    """
+    Evaluates fit of model to data using OLS regression.
     
-    X = sm.add_constant(model.rdm.transpose());
-    Y = data.dissimilarities.transpose();
+    Parameters
+        model: 
+        data
+
+    Returns
+        tvalues
+        betas
+        pvalues
+    """
+    
+    model = sm.add_constant(model.rdm.transpose());
+    data = data.dissimilarities.transpose();
     
     # to filter out potential nans in the model part
-    nan_filter = np.isnan(X).any(axis=1)
-    filtered_X = X[~nan_filter]
-    filtered_Y = Y[~nan_filter]
+    nan_filter = np.isnan(model).any(axis=1)
+    filtered_model = model[~nan_filter]
+    filtered_data = data[~nan_filter]
     
-    est = sm.OLS(filtered_Y, filtered_X).fit()
-    # import pdb; pdb.set_trace()
+    # estimate OLS model
+    est = sm.OLS(filtered_data, filtered_model).fit()
+
+    # return the tvalues, betas and pvalues
     return est.tvalues[1:], est.params[1:], est.pvalues[1:]
     
 
 
 def prepare_model_data(model_data, number_conditions, RDM_version):
-    # import pdb; pdb.set_trace()
+
     model_data = model_data.transpose()
     if RDM_version in ['01', '01-1']:
         nCond = model_data.shape[0]

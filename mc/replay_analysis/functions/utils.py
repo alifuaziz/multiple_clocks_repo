@@ -1,20 +1,50 @@
 """
 Utility functions for replay analysis
+
+@Author: Alif
 """
 import numpy as np
 from collections import defaultdict
 
-def similarity_measure(vector1: np.array, vector2: np.array, TYPE) -> float:
+def similarity_measure(
+        condiiton_1: np.array,
+        condition_2: np.array, 
+        TYPE = "cosine"
+        ) -> int:
     """
-    Calculate the similiarty between two vectors
+    Compute the similarity measure for two different conditions. This will eventually fill a similarity matrix
     """
-    if TYPE == 'cosine':
-        return np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
-    elif TYPE == 'euclidean':
-        return np.linalg.norm(vector1 - vector2)
-    else:
-        raise ValueError(f'TYPE {TYPE} not recognized')
+
+    if TYPE == "cosine":
+        similarity = np.dot(condiiton_1, condition_2) / (np.linalg.norm(condiiton_1) * np.linalg.norm(condition_2))
+    elif TYPE == "euclidean":
+        similarity = np.linalg.norm(condiiton_1 - condition_2)
+    elif TYPE == "pearson":
+        similarity = np.corrcoef(condiiton_1, condition_2)[0, 1]
+
+    else: 
+        raise NotImplementedError(f"Similarity measure {TYPE} not implemented")    
+
+    return similarity
     
+
+def create_similarity_matrix(
+        neuron_matrix: np.array, 
+        TYPE: str
+    ) -> np.array:
+    """
+    Create a similarity matrix from the data
+    """
+    no_conditions = neuron_matrix.shape[0]
+    sim_matrix = np.zeros((no_conditions, no_conditions))
+    for condition1 in range(no_conditions):
+        for condition2 in range(no_conditions):
+            sim_matrix[condition1, condition2] = similarity_measure(
+                neuron_matrix[condition1],
+                neuron_matrix[condition2], 
+                TYPE)
+            
+    return sim_matrix
 
 def RSM_to_RDM(RSM: np.array) -> np.array:
     """
@@ -23,7 +53,7 @@ def RSM_to_RDM(RSM: np.array) -> np.array:
     return 1 - RSM
     
 
-def reverse_nested_dict(dict_to_reverse):
+def reverse_nested_dict(dict_to_reverse: dict) -> dict:
     """
     Reverses the nesting of the dictionary by swapping the keys of the inner and outer dictionaries
     e.g.
@@ -47,7 +77,9 @@ def reverse_nested_dict(dict_to_reverse):
     return dict(flipped)
 
    
-def flatten_nested_dict(nested_dict):
+def flatten_nested_dict(
+        nested_dict: dict
+        ) -> dict:
     """
     :param nested_dict: A dictionary with nested dictionaries
 
@@ -62,7 +94,7 @@ def flatten_nested_dict(nested_dict):
             flattened_dict[key] = value
     return flattened_dict
  
-def print_stuff(string_input):
+def print_stuff(string_input: str):
     """
     This function prints the input string
     """

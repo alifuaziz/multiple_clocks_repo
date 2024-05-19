@@ -474,6 +474,25 @@ for sub in subjects_list:
             save_dir = RDM_dir, 
             string_for_ticks = sorted_keys_dict['1'])
 
+        # # make my own correlation matrix.
+        # # Schema - Partial Schema - Subgoal Progress - Location - State
+        # intercorr_RDM_dict = {}
+        # corr_RDMs = np.empty((len(corrected_RSM_dict),len(corrected_RSM_dict)))
+        # for x, RDM_one in enumerate(corrected_RSM_dict):
+        #     for y, RDM_two in enumerate(corrected_RSM_dict):
+        #         if y == 0:
+        #             tick_string = [RDM_two]
+        #         else:
+        #             tick_string.append(RDM_two)
+        #         corr_RDMs[x,y] = RDMs.corr_matrices_pearson(corrected_RSM_dict[RDM_one], corrected_RSM_dict[RDM_two])[0][1]               
+        # intercorr_RDM_dict['correlation_try_two'] = corr_RDMs
+
+        # RDMs.plot_RDMs(
+        #     RDM_dict = intercorr_RDM_dict, 
+        #     no_tasks = len(corr_RDMs), 
+        #     save_dir = RDM_dir, 
+        #     string_for_ticks = tick_string)       
+
     # Save the RDMs
     if FMRI_SAVE == True: 
         # then save these matrices.
@@ -482,7 +501,6 @@ for sub in subjects_list:
         if RDM_VERSION in ['03-5', '03-5-A', '04-5', '04-5-A']:
             np.save(os.path.join(RDM_dir, f"RSM_state_mask_across_halves"), RSM_dict_betw_TH_mask)
         for RDM in corrected_RSM_dict:
-            # Saves RDM (array) as a .npy file
             np.save(os.path.join(RDM_dir, f"RSM_{RDM}_{sub}_fmri_both_halves"), corrected_RSM_dict[RDM])
             
         # also save the regression files
@@ -494,8 +512,8 @@ for sub in subjects_list:
         
         # and lastly, save the order in which I put the RDMs.
     
-        # if the variable exists
         # save the sorted keys and the regressors.
+        # if the variable exists
 
         with open(f"{RDM_dir}/sorted_keys-model_RDMs.pkl", 'wb') as file:
             pickle.dump(sorted_keys_dict, file)
