@@ -646,6 +646,29 @@ def create_matrix_replay(EVs):
     return rdm_array
 
 
+def crosscorr_matrix(
+
+):
+    # Create the cross-correlation matrix
+    matrix = np.array(
+        [
+            [-1  , +1  , +1/4, -1/4, +1/4, -1/4, +1/4, -1/4,  +1/4, -1/4],
+            [+1  , -1  , +1/4, -1/4, +1/4, -1/4, +1/4, -1/4,  +1/4, -1/4],
+            [+1/4, -1/4, -1  , +1  , +1/4, -1/4, +1/4, -1/4,  +1/4, -1/4],
+            [-1/4, +1/4, +1  , -1  , +1/4, -1/4, +1/4, -1/4,  +1/4, -1/4],
+            [+1/4, -1/4, +1/4, -1/4, -1  , +1  , +1/4, -1/4,  +1/4, -1/4],
+            [-1/4, +1/4, -1/4, +1/4, +1  , -1  , +1/4, -1/4,  +1/4, -1/4],
+            [+1/4, -1/4, +1/4, -1/4, +1/4, -1/4, -1  , +1  ,  +1/4, -1/4],
+            [-1/4, +1/4, -1/4, +1/4, -1/4, +1/4, +1  , -1  ,  +1/4, -1/4],
+            [+1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4,   -1 , +1  ],
+            [-1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4,   +1 , -1  ]
+         ]
+    )
+
+
+    return matrix
+
+
 """
 Function for making the model RDM from the functions above in the correct format
 
@@ -675,12 +698,15 @@ def task_similarity_matrix(
     if model == "replay":
         # Create the RDMs for the replay analysis
         replay_RDM = create_matrix_replay(EVs)
+        rdm_stack = np.stack([replay_RDM])
+    elif model == "replay-2":
+        replay_RDM = crosscorr_matrix()
+        rdm_stack = replay_RDM.reshape(1, 10, 10)
     else: 
         # There is space here to add more models with new functions
         raise ValueError(f"Model not found. The {model} model needs to be implemented")
 
     # stack of RDMs for each condition. in this case, only one RDM. the "replay" one
-    rdm_stack = np.stack([replay_RDM])
 
     # a dictonary containing all the model desciptors
     model_RDM_descripter = {} 
@@ -691,12 +717,17 @@ def task_similarity_matrix(
     for idx, EV in enumerate(EVs):
         rdm_descriptor[f"condition_{idx}"] = EV
 
+    # A dictionary containing the conditions' title for each EV that is being compared.
+    pattern_descriptors = {}
+    pattern_descriptors['conditions'] = [EV for EV in EVs]
+
     # Create the RDM object
     replay_RDM_object = RDMs_object(
-        dissimilarities = rdm_stack,
+        dissimilarities       = rdm_stack,
         dissimilarity_measure = 'Arbitrary',
-        descriptors = model_RDM_descripter,
-        rdm_descriptors= rdm_descriptor
+        descriptors           = model_RDM_descripter,
+        # rdm_descriptors       = rdm_descriptor,
+        # pattern_descriptors   = pattern_descriptors
     )
 
     # Save the RDMs object to a pickle file
@@ -704,6 +735,9 @@ def task_similarity_matrix(
         # Save the RDMs object to a pickle file
         with open(f"{RDM_dir}/replay_RDM_object.pkl", 'wb') as file:
             pickle.dump(replay_RDM_object, file)
+        # replay_RDM_object.save(
+        #     filename = f"{RDM_dir}/replay_RDM_object.pkl",
+        #     overwrite = True)
 
     # Visualise the RDMs
     if VISUALISE == True:
@@ -711,7 +745,8 @@ def task_similarity_matrix(
         # Visualise the RDMs
         v.plot_RDM_object(replay_RDM_object, 
                           title = list(model_RDM_descripter.values())[0],
-                          conditions = EVs,)
+                          conditions = replay_RDM_object.pattern_descriptors['conditions']
+                          )
 
     # return RDM_object
     return replay_RDM_object

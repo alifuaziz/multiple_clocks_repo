@@ -61,7 +61,7 @@ def data_RDM_script(
     REMOVE_AUTOCORR = data_rdm_analysis_settings.get("REMOVE_AUTOCORR", False)
     TASK_HALVES = data_rdm_analysis_settings.get("TASK_HALVES", ['1', '2'])
     
-    USE_PREVIOUS_SEARCHLIGHTS = data_rdm_analysis_settings.get("USE_PREVIOUS_SEARCHLIGHTS", False)
+    USE_PREVIOUS_SEARCHLIGHTS = data_rdm_analysis_settings.get("USE_PREVIOUS_SEARCHLIGHTS", True)
     USE_PREVIOUS_DATA_RDM = data_rdm_analysis_settings.get("USE_PREVIOUS_DATA_RDM", False)
 
     VISUALISE_RDMS = data_rdm_analysis_settings.get("VISUALISE_RDMS", False)
@@ -84,6 +84,7 @@ def data_RDM_script(
 
 
     REGRESSION_VERSION = analyse_MRI_behav.preprocess_regression_version(REGRESSION_VERSION)
+    no_RDM_conditions = 10
 
     # create dictionary of paths to the EVs for each half (split) of the task
     # first half
@@ -94,8 +95,6 @@ def data_RDM_script(
     EV_path_dict_02 = analyse_MRI_behav.get_EV_dict(
         SUBJECT_DIRECTORY, REGRESSION_VERSION
         )
-
-
 
     ####################################################################################################
     # Get Searchlights
@@ -178,8 +177,8 @@ def data_RDM_script(
 
         # define the condition names for both task halves
         # 2 * 10 conditions, since there are 10 identical executution conditions in each task half
-        # data_conds = np.reshape(np.tile((np.array(['cond_%02d' % x for x in np.arange(no_RDM_conditions)])), (1, 2)).transpose(), 2 * no_RDM_conditions)
-        data_conds = [x for x in range(20)]
+        data_conds = np.reshape(np.tile((np.array(['cond_%02d' % x for x in np.arange(no_RDM_conditions)])), (1, 2)).transpose(), 2 * no_RDM_conditions)
+        # data_conds = [x for x in range(20)]
         # data_conds = np.reshape(np.tile((np.array(['cond_%02d' % x for x in np.arange(no_RDM_conditions)])), (1)).transpose(), no_RDM_conditions)
 
         # Defining both task halves runs: 0s first half, 1s is second half
@@ -191,14 +190,14 @@ def data_RDM_script(
     # for all other cases, cross correlated between task-halves.
     # TODO: try to have one only half 
     data_RDM = get_searchlight_RDMs(
-        # data_2d = EVs_both_halves_2d,         # (nObs x nVox) (20 * 746496)
-        data_2d = EVs_both_halves_array_2d, # (nObs x nVox)
+        data_2d = EVs_both_halves_2d,         # (nObs x nVox) (20 * 746496)
+        # data_2d = EVs_both_halves_array_2d, # (nObs x nVox)
         centers = centers, 
         neighbors = neighbors, 
         events  = data_conds,                 # (nObs x 1) of condition labels (con§d_00, cond_01, ... cond_09)
-        method = 'correlation', 
-        # method  ='crosscorr', 
-        # cv_descr = sessions                   # (nObs x 1) of session labels (0, 1)
+        # method = 'correlation', 
+        method  ='crosscorr', 
+        cv_descr = sessions                   # (nObs x 1) of session labels (0, 1)
                     )
 
     # Save the data RDMs
@@ -216,11 +215,16 @@ def data_RDM_script(
     # Not present: Create the Model RDM from the vector models of the response
 
     ####################################################################################################
+    # EVALUATE THE MODEL
+
     # Dictionary to store the results
     RDM_my_model_dir = {}
     # Define the type of model to be evaluated. It is a single model, not a set of models that. It does not have a set of betas to also fit. 
     model = "replay"
     single_model = rsatoolbox.model.ModelFixed(f"{model}_only", replay_RDM_object)
+
+
+    # For this analysis to work, the model RDMs must be in the same format at as the data RDMs
 
     # Run the model evaluation for all searchlights
     RDM_my_model_dir[model] = Parallel(n_jobs=3)(delayed(analyse_MRI_behav.evaluate_model)(single_model, data_RDM_p_voxel) for data_RDM_p_voxel in tqdm(data_RDM, desc=f"running GLM for all searchlights in {model}"))

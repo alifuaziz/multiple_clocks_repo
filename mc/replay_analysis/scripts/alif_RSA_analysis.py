@@ -37,7 +37,7 @@ def model_RDM_script(
 
     """
     # Unpack the analysis settings
-    sub                     = model_rdm_analysis_settings.get("SUBJECT_NO", "sub-02")
+    sub                     = model_rdm_analysis_settings.get("SUBJECT_NO", "sub-01")
     REGRESSION_VERSION      = model_rdm_analysis_settings.get("REGRESSION_VERSION", "01")
     RDM_VERSION             = model_rdm_analysis_settings.get("RDM_VERSION", "01")
 
@@ -47,7 +47,7 @@ def model_RDM_script(
     # 
     TEMPORAL_RESOLUTION     = model_rdm_analysis_settings.get("TEMPORAL_RESOLUTION", 10)
     # The type of model that is being tested in the  RSA analysis (against all of the RSA searchlights) 
-    MODEL                   = model_rdm_analysis_settings.get("MODEL", "replay")
+    MODEL                   = model_rdm_analysis_settings.get("MODEL", "replay-2")
     RDM_SIMILARITY_MEASURE  = model_rdm_analysis_settings.get("RDM_SIMILARITY_MEASURE", "pearson")
 
     # Visuisation Settings

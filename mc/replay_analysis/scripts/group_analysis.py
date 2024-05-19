@@ -23,7 +23,7 @@ from mc.replay_analysis.scripts import alif_RSA_model_RDM
 data_folder = Path("/Users/student/PycharmProjects/data")
 derivatives_folder = data_folder / "derivatives"
 subject_list = [f for f in derivatives_folder.iterdir() if f.is_dir()]
-subject_list = subject_list[1::]
+# subject_list = subject_list[1::]
 
 
 
@@ -41,7 +41,7 @@ for subject in subject_list:
         "RDM_VERSION": "01",
         "DATA_DIR": data_folder,
         "TEMPORAL_RESOLUTION": 10,
-        "MODEL": "replay",
+        "MODEL": "replay-2",
         "RDM_SIMILARITY_MEASURE": "pearson",
         "RDM_VISUALISE": False,
         "FMRI_PLOTTING": False,

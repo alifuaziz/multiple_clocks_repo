@@ -909,10 +909,10 @@ def auto_corr_RDM_obj(
     # Update the RDM in the RDM object
     corrected_RDM_obj.dissimilarities = corrected_RDM
 
-    # update the labels of the RDM object
+    # Update the labels of the RDM object
     
 
-    
+    # Return the copy of the RDM object with the corrected RDM
     return corrected_RDM_obj
 
 
