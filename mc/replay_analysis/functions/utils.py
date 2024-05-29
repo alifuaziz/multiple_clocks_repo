@@ -101,6 +101,34 @@ def print_stuff(string_input: str):
     print(string_input)
    
 
+def get_lower_triangle(matrix: np.array, k: int = 0) -> np.array:
+    """
+    Get the lower triangle of a matrix. Return it in vector form.
+
+    By default, the diagonal is included. To exclude the diagonal, set k=-1.
+
+    Example:
+    matrix = np.array([
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+    ])
+
+    get_lower_triangle(matrix) -> [1, 4, 5, 7, 8, 9]
+
+    """
+    return np.atleast_2d(matrix[np.tril_indices(matrix.shape[0])])
+
+
 if __name__ == "__main__":
     print("Running utils.py as main file")
+    
+    matrix = np.array([
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+    ])
+
+    print(get_lower_triangle(matrix))
+
     pass

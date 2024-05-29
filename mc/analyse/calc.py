@@ -23,6 +23,8 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
+from mc.replay_analysis.functions.utils import get_lower_triangle
+
 def calc_rdm(dataset, method='euclidean', descriptor=None, noise=None,
              cv_descriptor=None, prior_lambda=1, prior_weight=0.1):
     """
@@ -101,6 +103,7 @@ def calc_rdm(dataset, method='euclidean', descriptor=None, noise=None,
         # end addition
         else:
             raise NotImplementedError
+        
         if descriptor is not None:
             rdm.sort_by(**{descriptor: 'alpha'})
     return rdm
@@ -441,7 +444,7 @@ def calc_rdm_crosscorr(dataset, descriptor=None, cv_descriptor=None):
     creating a correlation matrix, and then averaging the lower triangle and 
     the top triangle of this nCond x nCond matrix by adding it to its transpose, 
     dividing by 2, and taking only the lower or upper triangle of the result.    
-    
+    x
     """
     datasetCopy = deepcopy(dataset)
     if cv_descriptor is None:
@@ -465,7 +468,12 @@ def calc_rdm_crosscorr(dataset, descriptor=None, cv_descriptor=None):
         rdm = (rdm_cv + np.transpose(rdm_cv))/2
         rdm = rdm[0:int(len(rdm)/2), int(len(rdm)/2):]
     
-    return _build_rdms(rdm, dataset, 'crosscorr', descriptor)     
+    # return _build_rdms(rdm, dataset, 'crosscorr', descriptor)
+
+    
+    rdm = _build_diagonal_rdms(rdm, dataset, 'crosscorr', descriptor)
+    
+    return rdm
 # end addition
 
 def _calc_rdm_crossnobis_single(meas1, meas2, noise) -> NDArray:
@@ -531,6 +539,59 @@ def _check_noise(noise, n_channel):
     return noise
 
 
+def _build_diagonal_rdms(
+            utv: NDArray,
+            ds: DatasetBase,
+            method: str,
+            obs_desc_name: str | None,
+            obs_desc_vals: Optional[NDArray] = None,
+            cv: Optional[NDArray] = None,
+            noise: Optional[NDArray] = None
+        ) -> RDMs:
+    """
+    Addition: Alif, 22nd May 2024
+    Function to build RDMs that include the diagonal elements of the matrix and do not set it to 0.
+    """
+    # Instantiates the RDMs Object
+    rdms = RDMs(
+        dissimilarities=np.array([utv]),            # utv is the rdm np array that is used to build the RDMs object
+        dissimilarity_measure=method,               # the method used to calculate the RDMs
+        rdm_descriptors=deepcopy(ds.descriptors)    # the ame descriptor of ___
+    )
+
+    rdm_array = get_lower_triangle(utv) # shape 1 x 10 x 10
+    rdms.dissimilarities = rdm_array                # replace the dissimilarities with the lower triangle vector 
+    
+    if (obs_desc_vals is None) and (obs_desc_name is not None):
+        # obtain the unique values in the target obs descriptor
+        _, obs_desc_vals, _ = average_dataset_by(ds, obs_desc_name)
+
+    # If the averaging occurred, the formatting of the `obs_descriptors` is changed to the correct format
+    if _averaging_occurred(ds, obs_desc_name, obs_desc_vals) == True:
+        orig_obs_desc_vals = np.asarray(ds.obs_descriptors[obs_desc_name])
+        for dname, dvals in ds.obs_descriptors.items():
+            dvals = np.asarray(dvals)
+            avg_dvals = np.full_like(obs_desc_vals, np.nan, dtype=dvals.dtype)
+            for i, v in enumerate(obs_desc_vals):
+                subset = dvals[orig_obs_desc_vals == v]
+                if len(set(subset)) > 1:
+                    break
+                avg_dvals[i] = subset[0]
+            else:
+                rdms.pattern_descriptors[dname] = avg_dvals
+    else:
+        rdms.pattern_descriptors = deepcopy(ds.obs_descriptors)
+
+    # Additional rdm_descriptors
+    if noise is not None:
+        rdms.descriptors['noise'] = noise
+    if cv is not None:
+        rdms.descriptors['cv_descriptor'] = cv
+
+    # returns the RDMs object
+    return rdms
+
+
 def _build_rdms(
             utv: NDArray,
             ds: DatasetBase,
@@ -576,6 +637,11 @@ def _averaging_occurred(
             obs_desc_name: str | None,
             obs_desc_vals: NDArray | None
         ) -> bool:
+    """
+    Checks if averaging occurred in the dataset by comparing the new and old object descriptor lengths. 
+    They also check if they are the same length.
+    """
+
     if obs_desc_name is None:
         return False
     orig_obs_desc_vals = ds.obs_descriptors[obs_desc_name]

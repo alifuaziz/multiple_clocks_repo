@@ -14,9 +14,8 @@ from pathlib import Path
 from time import time
 
 # Imoport custom scripts
-from mc.replay_analysis.scripts import alif_RSA_analysis
-from mc.replay_analysis.scripts import alif_RSA_model_RDM
-
+from mc.replay_analysis.scripts import model_RDM_alif as model_RDM
+from mc.replay_analysis.scripts import data_RDM_alif  as data_RDM
 
 
 # Create subject list from data folder 
@@ -26,9 +25,11 @@ subject_list = [f for f in derivatives_folder.iterdir() if f.is_dir()]
 # subject_list = subject_list[1::]
 
 
+#%%
 
+print("test")
 
-
+#%%
 # Run the analysis for each subject
 for subject in subject_list:
 
@@ -37,8 +38,8 @@ for subject in subject_list:
     model_rdm_analysis_settings = \
     {
         "SUBJECT_NO": str_subject,
-        "REGRESSION_VERSION": "01",
-        "RDM_VERSION": "01",
+        "REGRESSION_VERSION": "01-2",
+        "RDM_VERSION": "01-2",
         "DATA_DIR": data_folder,
         "TEMPORAL_RESOLUTION": 10,
         "MODEL": "replay-2",
@@ -53,8 +54,8 @@ for subject in subject_list:
     data_rdm_analysis_settings = \
     {
         'SUBJECT_NO': str_subject,
-        'REGRESSION_VERSION': "01",
-        'RDM_VERSION': "01",
+        'REGRESSION_VERSION': "01-2",
+        'RDM_VERSION': "01-2",
         'DATA_DIR': data_folder,
         'EVS_TYPE': "instruction_period",
         'REMOVE_AUTOCORR': True, 
@@ -70,11 +71,11 @@ for subject in subject_list:
     print("Running Analysis for Subject: ", subject)
     print("Creating Model RDM for Subject: ", subject)
     # Run script to create model RDM for subject
-    alif_RSA_analysis.model_RDM_script(model_rdm_analysis_settings = model_rdm_analysis_settings)
+    model_RDM.model_RDM_script(model_rdm_analysis_settings = model_rdm_analysis_settings)
 
 
     print("Creating Data RDM for Subject: ", subject)
-    alif_RSA_model_RDM.data_RDM_script(data_rdm_analysis_settings = data_rdm_analysis_settings)
+    data_RDM.data_RDM_script(data_rdm_analysis_settings = data_rdm_analysis_settings)
     # Run script to create data RDM for subject
 
 

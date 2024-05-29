@@ -623,6 +623,15 @@ def evaluate_model(model, data):
     return est.tvalues[1:], est.params[1:], est.pvalues[1:]
     
 
+def evaluate_model_extra_condition(
+        
+):
+    # get the lower triangle from : 
+        # data
+        # model 
+
+    pass
+
 
 def prepare_model_data(model_data: np.array,
                        no_Conditions: int, 
@@ -767,7 +776,10 @@ def analyse_pathlength_beh(df):
 
 
 
-def similarity_of_tasks(reward_per_task_per_taskhalf_dict, RDM_VERSION):
+def similarity_of_tasks(
+        reward_per_task_per_taskhalf_dict: dict,
+        RDM_VERSION: str
+        ) -> dict:
     """
     
     Notes: 
@@ -864,7 +876,80 @@ def similarity_of_tasks(reward_per_task_per_taskhalf_dict, RDM_VERSION):
 
     # import pdb; pdb.set_trace()   
     # CONTINUE HERE!!! THE  PRESENT SIM ISNT QUITE RIGHT YET!
+
+    """
+    Returns the executation simlartiy 
+    
+    """
+
+
+
     return models_between_tasks
+
+def get_configs_dict(
+        directory: str,
+        sub: str,
+        ) -> dict:
+    """
+    Function to return the configurations dictionary from the behavioural data
+
+    Returns a dictionary containing the configurations for each task half
+        configs_dict {task_half: {config_id: reward_points, ...}, ...}
+    
+    """
+
+
+
+    # get_configs_dict from behavioural data
+    configs_dict = {}
+    for task_half in ['1', '2']:
+
+        file = directory / f"{sub}_fmri_pt{task_half}.csv"
+        # 1. Extract the behavioural data from the .csv to appropriate dictionaries
+        _, rew_list, _, _, _, _, _, _ = analyse_MRI_behav.extract_behaviour(file)
+
+        configs_dict[task_half] = rew_list
+
+    return configs_dict
+
+
+def get_execution_order(
+        configs_dict: dict
+    ) -> dict:
+    """
+    Returns a dictionary containing the execution order of the tasks in the experiment.
+    """
+
+
+    execution_order = {
+        '1': list(configs_dict['1'].keys()),
+        '2': list(configs_dict['2'].keys())
+    }
+
+    # flatten dictionary
+    # configs = utils.flatten_nested_dict(configs_dict)
+
+    # for idx, config in enumerate(configs):
+    #     if idx < 10:
+    #         execution_order['1'].append(config)
+    #     else:
+    #         execution_order['2'].append(config)
+
+    # # Get a list of all of the reward points in the task 
+    # all_rewards = []
+    # for task in sorted(configs.keys()):
+    #     all_rewards.append(configs[task])
+
+    # # for each pair of reward points check which ones are the same
+    # execution_similarity = np.zeros((len(all_rewards), len(all_rewards))) # this is -0.012658227848101285 and 1
+    # for i in range(len(all_rewards)):
+    #     for j in range(len(all_rewards)):
+    #         if all_rewards[i] == all_rewards[j]:
+    #             execution_similarity[i, j] = 1
+    # 
+
+    return execution_order
+
 
 def auto_corr_RSM_dict(RSM_dict_betw_TH: dict) -> dict:
         """

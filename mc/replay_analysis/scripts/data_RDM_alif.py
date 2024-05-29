@@ -23,9 +23,11 @@ import rsatoolbox.rdm as rsr
 import rsatoolbox.vis as vis
 import rsatoolbox
 from rsatoolbox.rdm import RDMs
-from rsatoolbox.util.searchlight import get_volume_searchlight, get_searchlight_RDMs
 
 # mc imports
+# Instead of using the rsatoolbox searchlight function, import from mc
+# from rsatoolbox.util.searchlight        import get_volume_searchlight, get_searchlight_RDMs
+from mc.analyse.searchlight             import get_volume_searchlight, get_searchlight_RDMs
 import mc.analyse.analyse_MRI_behav     as analyse_MRI_behav
 import mc.analyse.calc                  as calc
 import mc.replay_analysis.functions.model_rdms as model_rdm_functions
@@ -36,19 +38,23 @@ def data_RDM_script(
     **data_rdm_analysis_settings
     ):  
     """
-    
     """
     # Unpack the analysis settings
-    sub                     = data_rdm_analysis_settings.get("SUBJECT_NO", "sub-01")
+    sub                     = data_rdm_analysis_settings.get("SUBJECT_NO", "sub-02")
     REGRESSION_VERSION      = data_rdm_analysis_settings.get("REGRESSION_VERSION", "01")
     RDM_VERSION             = data_rdm_analysis_settings.get("RDM_VERSION", "01")
-
     DATA_DIR                = data_rdm_analysis_settings.get("DATA_DIR", Path("/Users/student/PycharmProjects/data"))
+    
+    # Directory Stuff
     SUBJECT_DIRECTORY = DATA_DIR / 'derivatives' / sub
     print(SUBJECT_DIRECTORY)
     if os.path.isdir(SUBJECT_DIRECTORY):
         print("Running on laptop.")
+    
     DERIVATIVES_DIR         = DATA_DIR / "derivatives"
+    
+    RAW_BEH_DIR = DATA_DIR / "raw" / sub / "beh"
+
     RDM_DIR = SUBJECT_DIRECTORY / 'beh' / f"RDMs_{RDM_VERSION}_glmbase_{REGRESSION_VERSION}"
     # Make the RDM_dir if it doesn't exist
     if not RDM_DIR.exists():
@@ -73,10 +79,10 @@ def data_RDM_script(
     ref_img = load_img( SUBJECT_DIRECTORY / 'func' / 'preproc_clean_01.feat'/ 'example_func.nii.gz' )
 
     # load the file which defines the order of the model RDMs, and hence the data RDMs
-    with open(f"{RDM_DIR}/sorted_keys-model_RDMs.pkl", 'rb') as file:
-        sorted_keys = pickle.load(file)
-    with open(f"{RDM_DIR}/sorted_regs.pkl", 'rb') as file:
-        reg_keys = pickle.load(file)
+    # with open(f"{RDM_DIR}/sorted_keys-model_RDMs.pkl", 'rb') as file:
+    #     sorted_keys = pickle.load(file)
+    # with open(f"{RDM_DIR}/sorted_regs.pkl", 'rb') as file:
+    #     reg_keys = pickle.load(file)
     # also store 2 dictionaries of the EVs
 
 
@@ -122,11 +128,13 @@ def data_RDM_script(
             data_RDM = pickle.load(file)
         
         if VISUALISE_RDMS == True:
-            analyse_MRI_behav.visualise_data_RDM(mni_x = 53, 
-                                                mni_y = 30, 
-                                                mni_z = 2, 
-                                                data_RDM_file = data_RDM, 
-                                                mask = mask)
+            analyse_MRI_behav.visualise_data_RDM(
+                mni_x = 53, 
+                mni_y = 30, 
+                mni_z = 2, 
+                data_RDM_file = data_RDM, 
+                mask = mask
+                )
             
     else:
         # Create dictionary to store the data for each EV for both task halves
@@ -137,15 +145,25 @@ def data_RDM_script(
         # create new dictionary to store the 2D array of EVs for both task halves
         EVs_both_halves_2d = EVs_both_halves_dict.copy()
 
+        # configs_dict = analyse_MRI_behav.get_configs_dict(RAW_BEH_DIR, sub = sub)
+
+
         for split in TASK_HALVES:
 
-            
+            """
+            The order that the tasks are loaded into the EVs_path_dict must be the same as the model RDM / the behavioural data
+            """
+
+            # BUG: in EVs_path_dict[split], the keys are in the wrong order. They should be in the same order as the configs_dict.
+            # Work around could involve sorting the keys of the EVs_path_dict alphabetically. Doing the same for the model RDMs 
             EVs_path_dict = model_rdm_functions.get_EV_path_dict(
                 subject_directory = SUBJECT_DIRECTORY,
+                # configs_dict = configs_dict,
                 split = split,
                 EVs_type = EVS_TYPE
                 )
-            
+
+        
             # Load in the EVs for the instruction periods from the dictionary of paths
             EVs_data_dict = model_rdm_functions.load_EV_data(
                 EVs_path_dict = EVs_path_dict,
@@ -187,10 +205,16 @@ def data_RDM_script(
         
 
     ####################################################################################################
-    # for all other cases, cross correlated between task-halves.
-    # TODO: try to have one only half 
+    
+    # only analyse a subset of the data for testing
+    # SUBSET = 1001
+    # xs_both_halves_2d['1'] = EVs_both_halves_2d['1'][:, :SUBSET]
+    # EVs_both_halves_2d['2'] = EVs_both_halves_2d['2'][:, :SUBSET]
+    # centers   =                                  centers[:SUBSET]
+    # neighbors =                                neighbors[:SUBSET]
+
     data_RDM = get_searchlight_RDMs(
-        data_2d = EVs_both_halves_2d,         # (nObs x nVox) (20 * 746496)
+        data_2d = EVs_both_halves_2d,         #  Dict[split] = np.array of shape (n_conditions for each half, searchlights)
         # data_2d = EVs_both_halves_array_2d, # (nObs x nVox)
         centers = centers, 
         neighbors = neighbors, 
@@ -200,13 +224,18 @@ def data_RDM_script(
         cv_descr = sessions                   # (nObs x 1) of session labels (0, 1)
                     )
 
+    # convert 11 conditions to 10 conditions for the data RDMs?
+
+    # Shape of the data_RDM[0].dismissimilarities is should be 55. But is currently 45.
+
     # Save the data RDMs
-    with open(f"{RESULTS_DIR}/data_RDM.pkl", 'wb') as file:
+    # with open(f"{RESULTS_DIR}/data_RDM.pkl", 'wb') as file:
+    with open(SUBJECT_DIRECTORY / 'func' /  f'RSA_{RDM_VERSION}_glmbase_{REGRESSION_VERSION}' / 'data_RDM.pkl', 'wb') as file:
         pickle.dump(data_RDM, file)
 
     ####################################################################################################
     # Load in the Model RDMs object from Previous Script
-    replay_dir = f"/Users/student/PycharmProjects/data/derivatives/{sub}/beh/RDMs_01_glmbase_01/replay_RDM_object.pkl"
+    replay_dir = f"{DATA_DIR}/derivatives/{sub}/beh/RDMs_{RDM_VERSION}_glmbase_{REGRESSION_VERSION}/replay_RDM_object.pkl"
 
     with open(replay_dir, 'rb') as file:
         replay_RDM_object = pickle.load(file)
@@ -244,8 +273,6 @@ def data_RDM_script(
                             ref_image_for_affine_path=ref_img
                             )
             
-
-
 
 if __name__ == "__main__":
     data_RDM_script()

@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import pickle
 import sys
 from pathlib import Path
+import copy
 # RSA specific libraries
 
 # Multiple Clocks Repositiory
@@ -37,7 +38,7 @@ def model_RDM_script(
 
     """
     # Unpack the analysis settings
-    sub                     = model_rdm_analysis_settings.get("SUBJECT_NO", "sub-01")
+    sub                     = model_rdm_analysis_settings.get("SUBJECT_NO", "sub-02")
     REGRESSION_VERSION      = model_rdm_analysis_settings.get("REGRESSION_VERSION", "01")
     RDM_VERSION             = model_rdm_analysis_settings.get("RDM_VERSION", "01")
 
@@ -48,10 +49,11 @@ def model_RDM_script(
     TEMPORAL_RESOLUTION     = model_rdm_analysis_settings.get("TEMPORAL_RESOLUTION", 10)
     # The type of model that is being tested in the  RSA analysis (against all of the RSA searchlights) 
     MODEL                   = model_rdm_analysis_settings.get("MODEL", "replay-2")
+    # The similarity measure that is being used to make the RDMs between the different vectors
     RDM_SIMILARITY_MEASURE  = model_rdm_analysis_settings.get("RDM_SIMILARITY_MEASURE", "pearson")
 
     # Visuisation Settings
-    RDM_VISUALISE           = model_rdm_analysis_settings.get("RDM_VISUALISE", False)
+    RDM_VISUALISE           = model_rdm_analysis_settings.get("RDM_VISUALISE", True)
     FMRI_PLOTTING           = model_rdm_analysis_settings.get("FMRI_PLOTTING", False)
     FMRI_SAVE               = model_rdm_analysis_settings.get("FMRI_SAVE", False)
 
@@ -109,14 +111,36 @@ def model_RDM_script(
     ####################################################################################################
     # Create the model RDMs
 
-    sorted_keys_dict = extract_and_clean.order_task_according_to_rewards(configs_dict)
+    # sorted_keys_dict = extract_and_clean.order_task_according_to_rewards(configs_dict)
 
+    # # Get the correct order of execution of the tasks, from the rewards file 
+    # model_between_tasks = analyse_MRI_behav.similarity_of_tasks(
+    #     configs_dict,
+    #     RDM_VERSION
+    
+
+    """
+    Funciton to check order or exectuation of rewards
+    `similarity of task` function for doing this
+    a list that is the order of the tasks that were done behavioursally
+
+    Please note that the order of the tasks are alphabetically sorted. This is also true for the order of the data into the searchlight RDMs function.
+
+
+    """
+
+    execution_order = analyse_MRI_behav.get_execution_order(
+        configs_dict
+        )
+
+    for task_half in ['1', '2']:
+        execution_order[task_half].sort()
 
     # Create the model RDMs
     RDM_object = model_rdms.task_similarity_matrix(
-        configs_dict = configs_dict,
+        configs_dict =  execution_order,
         model = MODEL, 
-        RDM_dir = RDM_dir,
+        RDM_dir = RDM_dir,      # If the RDM_dir is not None, it will save it to that directory
         VISUALISE = RDM_VISUALISE,
     )
 
