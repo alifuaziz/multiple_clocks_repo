@@ -22,14 +22,10 @@ source $fslDir/etc/fslconf/fsl.sh
 glm_version="01"
 RSA_version="replay"
 
-# 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
-# for subjectTag in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24; do
-
 echo now starting transforming all results of glm $glm_version RSA $RSA_version to standard space
 # 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 
 # for subjectTag in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34; do #without 21
 # for subjectTag in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 27 28 29 30 31 32 33 34; do
-
 
 # for every result file
 for subjectTag in 02; do
@@ -51,20 +47,23 @@ for subjectTag in 02; do
     # G
     preprocDir=${scratchDir}/derivatives/sub-${subjectTag}/func/preproc_clean_01.feat
 
+    # Removing previous standard space files to create the new ones
     echo now for subject $subjectTag glm $glm_version RSA $RSA_version
     # in case something has gone wrong before
     find "$resultDir" -type f -name 'std-std-*.nii.gz' -exec rm {} +
     find "$resultDir" -type f -name 'std-*.nii.gz' -exec rm {} +
     find "$resultDir" -type f -name '*_std.nii.gz' -exec rm {} +
 
+
     # Loop through each .nii.gz file in the directory
     for file in "$resultDir"/*.nii.gz; do
         # Extract the filename without the extension
         file_name=$(basename "$file" .nii.gz)
-        # skip if you already transformed this
+        # Skip the processing of this file if it has already been transformed
         if [[ $file_name == std* ]]; then
             continue 
         fi
+        
         # Define the output filename
         output="${stdDir}/${file_name}_std.nii.gz"
         # Transform to standard

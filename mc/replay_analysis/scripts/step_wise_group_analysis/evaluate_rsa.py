@@ -17,8 +17,20 @@ def main(
     SUB                 = kwargs['META_DATA'].get('SUB')
     # load stuff in
 
-    with open(f"{SUBJECT_DIRECTORY}/searchlight_data_rdms_tri.pkl", 'rb') as f:
-        data_rdms_tri = pickle.load(f)
+    with open(f"{SUBJECT_DIRECTORY}/searchlight_data_rdms.pkl", 'rb') as f:
+        data_rdms_dict = pickle.load(f)
+
+
+    # convert to triangle vectors for RSA
+    data_rdms_tri = data_rdms.get_data_rdms_tri(
+        data_rdms_dict = data_rdms_dict
+    )
+
+
+
+    # with open(f"{SUBJECT_DIRECTORY}/searchlight_data_rdms_tri.pkl", 'rb') as f:
+    #     data_rdms_tri = pickle.load(f)
+
 
 
     # load in the model rdm

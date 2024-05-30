@@ -41,17 +41,17 @@ META_DATA = \
 
 
 
-# for subject in subject_list:
+for subject in subject_list:
 
-#     # UPDATE THE META_DATA for each subject
-#     META_DATA['SUBJECT_DIRECTORY'] = str(DATA_FOLDER) + '/derivatives/' + str(subject)[-6:] 
-#     META_DATA['SUB'] = str(subject)[-6:]
+    # UPDATE THE META_DATA for each subject
+    META_DATA['SUBJECT_DIRECTORY'] = str(DATA_FOLDER) + '/derivatives/' + str(subject)[-6:] 
+    META_DATA['SUB'] = str(subject)[-6:]
 
-#     print('Running script for subject: ', META_DATA['SUBJECT_DIRECTORY'])
-#     # Run the script
-#     get_vol_searchlights.main(META_DATA = META_DATA)
+    print('Running script for subject: ', META_DATA['SUBJECT_DIRECTORY'])
+    # Run the script
+    get_vol_searchlights.main(META_DATA = META_DATA)
 
-#     pass
+    pass
 
 
 for subject in subject_list:

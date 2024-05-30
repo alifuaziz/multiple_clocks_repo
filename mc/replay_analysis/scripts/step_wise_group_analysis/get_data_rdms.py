@@ -24,18 +24,18 @@ def main(
     SIZE = 'cross_corr'
     )
 
-    # convert to triangle vectors for RSA
-    data_rdms_tri = data_rdms.get_data_rdms_tri(
-        data_rdms_dict = data_rdms_dict
-    )
+    # # convert to triangle vectors for RSA
+    # data_rdms_tri = data_rdms.get_data_rdms_tri(
+    #     data_rdms_dict = data_rdms_dict
+    # )
 
 
     # save
     with open(f"{SUBJECT_DIRECTORY}/searchlight_data_rdms.pkl", 'wb') as f:
         pickle.dump(data_rdms_dict, f)
 
-    with open(f"{SUBJECT_DIRECTORY}/searchlight_data_rdms_tri.pkl", 'wb') as f:
-        pickle.dump(data_rdms_tri, f)
+    # with open(f"{SUBJECT_DIRECTORY}/searchlight_data_rdms_tri.pkl", 'wb') as f:
+    #     pickle.dump(data_rdms_tri, f)
 
 
         

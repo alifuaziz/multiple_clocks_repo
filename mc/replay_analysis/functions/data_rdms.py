@@ -314,7 +314,7 @@ def get_data_rdms(
 
 
     data_rdms_dict = {}
-    with tqdm(total=len(data_searchlight), desc='Creating RDMS...') as pbar:
+    with tqdm(total=len(data_searchlight), desc='Creating Data RDMS...') as pbar:
         # def process_center(center):
         #     df = data_searchlight[center]
         #     rdm = get_rdm_from_df(df, SIZE)
@@ -373,41 +373,10 @@ def dissimilarity_measure(
         raise ValueError("The similarity measure must be either 'pearson' or 'cosine'.")
     
 
-def get_rdm_from_df(df: pd.DataFrame,
-                    SIZE: str,
-                    MEASURE: str = "pearson"
-                    ) -> pd.DataFrame:
-    """
-    Calculate the RDM from a DataFrame.
-
-    Parameters:
-    - df (pd.DataFrame): A DataFrame containing the data for the RDM.
-
-    Returns:
-    - rdm (pd.DataFrame): A DataFrame containing the RDM.
-    """
-
-    rdm = pdist(df.T.to_numpy(), metric=dissimilarity_measure)
-    rdm = squareform(rdm)
-
-    # create the RDM DataFrame
-    rdm = pd.DataFrame(rdm, columns=df.columns, index=df.columns)
-
-    # sort the dataframe into the two halves order
-    rdm = sort_data_searchlight(rdm, conditions_type="two_halves")
-
-    if SIZE == "cross_corr":
-        # We are only going to return the comparison between part 1 and part 2 of the task 
-        rdm = rdm.iloc[:10, 10:] + np.transpose(rdm.iloc[10:, :10]) / 2
-        # What is the naming convention for this?
-
-        return rdm
-
-    
-# def get_rdm_from_df(df: dict,
-#                 SIZE: str,
-#                 MEASURE: str = "pearson"
-#                 ) -> pd.DataFrame:
+# def get_rdm_from_df(df: pd.DataFrame,
+#                     SIZE: str,
+#                     MEASURE: str = "pearson"
+#                     ) -> pd.DataFrame:
 #     """
 #     Calculate the RDM from a DataFrame.
 
@@ -418,10 +387,8 @@ def get_rdm_from_df(df: pd.DataFrame,
 #     - rdm (pd.DataFrame): A DataFrame containing the RDM.
 #     """
 
-#     rdm = np.zeros((df.shape[1], df.shape[1]))
-#     for ev1_idx, EV1 in enumerate(df.T.to_numpy()):
-#         for ev2_idx, EV2 in enumerate(df.T.to_numpy()):
-#             rdm[ev1_idx, ev2_idx] = dissimilarity_measure(EV1, EV2, MEASURE)
+#     rdm = pdist(df.T.to_numpy(), metric=dissimilarity_measure)
+#     rdm = squareform(rdm)
 
 #     # create the RDM DataFrame
 #     rdm = pd.DataFrame(rdm, columns=df.columns, index=df.columns)
@@ -435,13 +402,49 @@ def get_rdm_from_df(df: pd.DataFrame,
 #         # What is the naming convention for this?
 
 #         return rdm
-            
-#         # corrected_model = (RSM_dict_betw_TH[model] + np.transpose(RSM_dict_betw_TH[model]))/2
-#         # corrected_RSM_dict[model] = corrected_model[0:int(len(corrected_model)/2), int(len(corrected_model)/2):]
-#     else:
-#         # Return the whole array
-#         return rdm
 
+    
+def get_rdm_from_df(df: dict,
+                SIZE: str,
+                MEASURE: str = "pearson"
+                ) -> pd.DataFrame:
+    """
+    Calculate the RDM from a DataFrame.
+
+    Parameters:
+    - df (pd.DataFrame): A DataFrame containing the data for the RDM.
+
+    Returns:
+    - rdm (pd.DataFrame): A DataFrame containing the RDM.
+    """
+
+    rdm = np.zeros((df.shape[1], df.shape[1]))
+
+    # 1. Sort the order of the df coming in to be the standard order
+    # Is this done in the correct order. The main question is whether the RDM EVs are the in the correct order 
+    # Are they comparing the correct conditions to each other. If not they it is getting the wrong RDM
+    # df = sort_data_searchlight(df, conditions_type="two_halves")
+
+
+    # Convert df to numpy array
+    df_np = df.to_numpy()
+
+    # Calculate the RDM
+    for ev1_idx, EV1 in enumerate(df_np.T):
+        for ev2_idx, EV2 in enumerate(df_np.T):
+            if ev1_idx < 10 and ev2_idx >=10:
+                rdm[ev1_idx, ev2_idx] = dissimilarity_measure(EV1, EV2, MEASURE)
+
+    # create the RDM DataFrame
+    rdm = pd.DataFrame(rdm, columns=df.columns, index=df.columns)
+
+    # sort the dataframe into the two halves order
+    rdm = sort_data_searchlight(rdm, conditions_type="two_halves")
+
+
+    rdm = rdm.iloc[:10, 10:]
+
+    return rdm
 
 
 def plot_rdm(
