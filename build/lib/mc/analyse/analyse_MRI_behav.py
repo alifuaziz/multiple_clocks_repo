@@ -10,7 +10,6 @@ This file is to open and clean my behavioural variables.
 
 import pandas as pd
 import numpy as np
-import mc
 import matplotlib.pyplot as plt
 import scipy.special as sps  
 import statsmodels.api as sm
@@ -18,15 +17,33 @@ from nilearn.image import load_img
 import os
 import nibabel as nib
 import statsmodels.api as sm
+import shutil
+from datetime import datetime
+import warnings
+
+import mc
+import mc.analyse.analyse_MRI_behav as analyse_MRI_behav
+import mc.replay_analysis.functions.utils as utils
 import rsatoolbox.data as rsd
 from rsatoolbox.rdm.calc import _build_rdms
 from rsatoolbox.rdm import RDMs
-from rsatoolbox.model.model import ModelFixed
-import shutil
-from datetime import datetime
-
 
 def subpath_files(configs, subpath_after_steps, rew_list, rew_index, steps_subpath_alltasks):
+    """
+    Function construction the subpath_after_steps dictionary
+    
+
+    :returns steps_subpath_alltasks: dict of lists of lists for each task config
+        - list of lists of the number of steps taken between each reward for each repeat of the task config
+        i.e.[[4, 2, 3, 5],
+             [4, 2, 3, 3],
+             [4, 2, 3, 3],
+             [4, 2, 3, 3],
+             [6, 2, 3, 3]]
+        is the number of steps taken between each reward (coin) for each of the 5 repeats of the task 'C1_forw'
+    """
+
+
     for config in configs:
         rew_list[config] = [[int(value) for value in sub_list] for sub_list in rew_list[config][0:4]]
         # next step: create subpath files with rew_index and how many steps there are per subpath.
@@ -76,14 +93,12 @@ def extract_behaviour(file):
     :returns subpath_after_steps
         - Index represents the global index of the steps taken by the agent where reward was obtained
     :returns steps_subpath_alltasks: dict of lists for each task config (e.g.) of the number of steps taken between each reward
-        - ??
+        - see the function subpath_files for more details on what is being returned
     :returns timings: dict of lists for each task config (e.g.) of the global times of the agents steps (w.r.t the start of the experiment)
         - list of global timings that each step was taken by the agent for each task config
     :returns regressors
         - ??
     """
-
-
     # load the two required excel sheets
     df = pd.read_csv(file)
     # the first row is empty so delete to get indices right
@@ -98,10 +113,10 @@ def extract_behaviour(file):
     # add columns whith field numbers 
     for index, row in df.iterrows():
         # current locations
-        df.at[index, 'curr_loc_y_coord'] = mc.analyse.analyse_MRI_behav.transform_coord(df.at[index,'curr_loc_y'], is_y=True, is_x = False)
-        df.at[index, 'curr_loc_x_coord'] = mc.analyse.analyse_MRI_behav.transform_coord(df.at[index,'curr_loc_x'], is_x=True, is_y = False)
-        df.at[index, 'curr_rew_y_coord'] = mc.analyse.analyse_MRI_behav.transform_coord(df.at[index,'curr_rew_y'], is_y=True, is_x = False)
-        df.at[index, 'curr_rew_x_coord'] = mc.analyse.analyse_MRI_behav.transform_coord(df.at[index,'curr_rew_x'], is_x=True, is_y = False)
+        df.at[index, 'curr_loc_y_coord'] = analyse_MRI_behav.transform_coord(df.at[index,'curr_loc_y'], is_y=True, is_x = False)
+        df.at[index, 'curr_loc_x_coord'] = analyse_MRI_behav.transform_coord(df.at[index,'curr_loc_x'], is_x=True, is_y = False)
+        df.at[index, 'curr_rew_y_coord'] = analyse_MRI_behav.transform_coord(df.at[index,'curr_rew_y'], is_y=True, is_x = False)
+        df.at[index, 'curr_rew_x_coord'] = analyse_MRI_behav.transform_coord(df.at[index,'curr_rew_x'], is_x=True, is_y = False)
         # and prepare the regressors: config type, state and reward/walking specific.
         if not pd.isna(row['state']):
             if not np.isnan(row['rew_loc_x']):
@@ -119,7 +134,7 @@ def extract_behaviour(file):
 
     configs = df['config_type'].dropna().unique()
     
-    # Initialised dictionaries
+    
     walked_path = {}
     timings = {}
     rew_list = {}
@@ -127,7 +142,6 @@ def extract_behaviour(file):
     rew_index = {}
     subpath_after_steps = {}
     steps_subpath_alltasks = {}
-    # Intialise the dictionaries with empty lists for each task config
     for config in configs:
         walked_path[config] = []
         timings[config] = []
@@ -196,15 +210,20 @@ def extract_behaviour(file):
     return configs, rew_list, rew_index, walked_path, steps_subpath_alltasks, subpath_after_steps, timings, regressors
 
 
-def models_I_want(RDM_version: str) -> list[str]:
+def models_I_want(RDM_version: str) -> list:
     """
-    Functions that returns the models used for creating the model RDMs.
+    :param RDM_version: str : version of the RDMs to be used for the RSA analysis e.g. "01"
 
-    :return: models_I_want (list) :  of strings 
+    :return models_I_want: list of models that I want to use for the RSA analysis as a list of strings
+        - e.g. ['direction_presentation', 'execution_similarity', 'presentation_similarity']
     """
 
-    if RDM_version in ['01', '01-1']: # 01 doesnt work yet! ??
+    if RDM_version in ['01', '01-1']: # 01 doesnt work yet! 
         models_I_want = ['direction_presentation', 'execution_similarity', 'presentation_similarity']
+    # elif RDM_version in ['01-2']: 
+    #     raise NotImplementedError(f"This version ({RDM_version}) is not implemented yet")
+    elif RDM_version in ['01-2']:
+        models_I_want = ['']
     elif RDM_version in ['02', '02-A']: #modelling paths + rewards, creating all possible models 
         models_I_want = ['location', 'phase', 'phase_state', 'state', 'task_prog', 'curr_rings_split_clock', 'one_fut_rings_split_clock', 'two_fut_rings_split_clock', 'three_fut_rings_split_clock', 'midnight', 'clocks']
     elif RDM_version in ['03', '03-A', '03-l', '03-e']: # modelling only rewards, splitting clocks within the same function
@@ -221,15 +240,74 @@ def models_I_want(RDM_version: str) -> list[str]:
         models_I_want = ['location', 'phase', 'phase_state', 'state', 'task_prog', 'clocks_only-rew', 'midnight_only-rew', 'one_future_rew_loc' ,'two_future_rew_loc', 'three_future_rew_loc']
     elif RDM_version in ['04', '04-A']: # only paths. to see if the human brain represents also only those rings anchored at no-reward locations
         models_I_want = ['location', 'phase', 'phase_state', 'state', 'task_prog', 'curr_rings_split_clock', 'one_fut_rings_split_clock', 'two_fut_rings_split_clock', 'three_fut_rings_split_clock', 'midnight_no-rew', 'clocks_no-rew']
-    
-    # list of strings to be returned
+    else:
+        raise ValueError(f"RDM_version {RDM_version} is not recognised.")
+
+    # returns the list 
     return models_I_want
 
+def preprocess_regression_version(REGRESSION_VERSION):
+    """
+    Function to preprocess the regression version string to ensure that it is in the correct format
+    
+    """
+
+    if REGRESSION_VERSION in ['03-3', '03-4']:
+        REGRESSION_VERSION = '03'
+    if REGRESSION_VERSION in ['03-4-e']:
+        REGRESSION_VERSION = '03-e'
+    if REGRESSION_VERSION in ['03-4-l']:
+        REGRESSION_VERSION = '03-l'
+    if REGRESSION_VERSION in ['04-4']:
+        REGRESSION_VERSION = '04'
+
+    return REGRESSION_VERSION
+
+def get_no_RDM_conditions(regression_version: str) -> int:
+    """
+    Returns the number of conditions that the RDM will be compared to for the RSA analaysis.
+    This is, therefore, size of the RDM matrix 
+
+    :param regression_version: str : version of the regression model used for the analysis
+    :return: no_RDM_conditions (int) : number of conditions in the RDM model
+    """
+    if regression_version in ['01']:
+        no_RDM_conditions = 20 # including all instruction periods. This is the number of separate conditions that will be compared to eachother
+    elif regression_version in ['01-2']:
+        # no_RDM_conditions = 10, we are treating all execution periods of the same set of rewards as the same condition.
+        no_RDM_conditions = 10 
+    elif regression_version in ['02', '02-e', '02-l']:
+        no_RDM_conditions = 80 # including all paths and rewards
+    elif regression_version in ['03', '04','03-99', '03-999', '03-9999', '03-l', '03-e']:
+        no_RDM_conditions = 40 # only including rewards or only paths
+    elif regression_version == '03-3': #excluding reward A
+        no_RDM_conditions = 30
+    elif regression_version in ['03-4', '04-4', '03-4-e', '03-4-l']: # only including tasks without double reward locs: A,C,D  and only rewards
+        no_RDM_conditions = 24
+    if regression_version in ['03-4', '04-4'] and RDM_version in ['03-5-A', '02-A', '03-A', '04-A', '04-5-A']: # only TASK A,C,D, only rewards B-C-D
+        no_RDM_conditions = 18
+
+    return no_RDM_conditions
+
+def get_EV_dict(data_dir: str, regression_version: str) -> dict:
+    """
+    Function to read in the EVs for the GLM
+
+    Returns a dictionary of the different events and their respective paths
+    e.g. {'ev_press_EV_1': '/path/to/ev_press_EV_1.nii.gz', ...}
+    
+    """
+
+    pe_path = f"{data_dir}/func/glm_{regression_version}.feat/stats"
+    reading_in_EVs_dict = {}
+    with open(f"{data_dir}/func/EVs_{regression_version}_pt01/task-to-EV.txt", 'r') as file:
+        for line in file:
+            index, name = line.strip().split(' ', 1)
+            reading_in_EVs_dict[name] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
+    return reading_in_EVs_dict
 
 
-
-
-def move_files_to_subfolder(folder_path):
+def move_files_to_subfolder(folder_path: str):
     # import pdb; pdb.set_trace()
 
     # List all files in the source folder
@@ -253,11 +331,17 @@ def move_files_to_subfolder(folder_path):
             shutil.move(os.path.join(folder_path, file), subfolder_path)
             print(f"Moved {file} to {subfolder_path}/")
          
-    
-  
+
+def print_stuff(string_input: str):
+    """
+    print the string input
+    """
+    print(string_input)
     
 
-def jitter(expected_step_no):
+def jitter(expected_step_no: int) -> np.array:
+
+
     # first randomly sample from a gamma distribution
     shape = 5.75 # this is what the mean subpath is supposed to be
     draw = np.random.standard_gamma(shape)
@@ -321,8 +405,10 @@ def jitter(expected_step_no):
     
     
 
-# code snippet to create a regressor
 def create_EV(onset, duration, magnitude, name, folder, TR_at_sec):
+    """
+    code snippet to create a regressor
+    """
     if len(onset) > len(duration):
         onset = onset[:len(duration)]
         magnitude = magnitude[:len(duration)]
@@ -338,8 +424,11 @@ def create_EV(onset, duration, magnitude, name, folder, TR_at_sec):
     return regressor_matrix
 
 
-# to transform the locations
 def transform_coord(coord, is_x = False, is_y = False):
+    """
+    Converts the coordinates (2d, is_x, is_y) of the agent to a 3x3 grid with 0,0 in the bottom LHS corner
+    """
+
     if is_x:
         if coord == -0.21:
             return 0
@@ -362,6 +451,10 @@ def transform_coord(coord, is_x = False, is_y = False):
 
 # use to check if the EV making went wrong
 def check_for_nan(array):
+    """
+    Function to check if there are any NaNs in the array
+    """
+
     # import pdb; pdb.set_trace()
     count = 0
     while np.isnan(array).any():
@@ -466,21 +559,33 @@ def visualise_data_RDM(mni_x, mni_y, mni_z, data_RDM_file, mask):
     
 
 def save_RSA_result(result_file, data_RDM_file, file_path, file_name, mask, number_regr, ref_image_for_affine_path):
+    """
+    Save the RSA results from the list of evaluations to a Nifti file for the t-values, beta-values and p-values
+    
+    """
+
+    # Get the shape of the mask of the brain
     x, y, z = mask.shape
+    # Load the reference image for the affine matrix
     ref_img = load_img(ref_image_for_affine_path)
     affine_matrix = ref_img.affine
     
+    # Create the directory to for the results to be saved
     if not os.path.exists(file_path):
         os.makedirs(file_path)
         
-    # import pdb; pdb.set_trace() 
-    
+    # Create the array for the t-values
     t_result_brain = np.zeros([x*y*z])
+    # ???
     t_result_brain[list(data_RDM_file.rdm_descriptors['voxel_index'])] = [vox[0][number_regr] for vox in result_file]
+    # Reshape the t-values to the shape of the mask of the brain
     t_result_brain = t_result_brain.reshape([x,y,z])
     
+    # Convert the t-values to a Nifti image
     t_result_brain_nifti = nib.Nifti1Image(t_result_brain, affine=affine_matrix)
+    # define the file path and name for the t-values
     t_result_brain_file = f"{file_path}/{file_name}_t_val.nii.gz"
+    # Save the t-values as a Nifti image
     nib.save(t_result_brain_nifti, t_result_brain_file)
     
     b_result_brain = np.zeros([x*y*z])
@@ -500,24 +605,10 @@ def save_RSA_result(result_file, data_RDM_file, file_path, file_name, mask, numb
     nib.save(p_result_brain_nifti, p_result_brain_file)
 
 
-def evaluate_model(
-        model: ModelFixed,
-        data: RDMs
-        ):
-    """
-    Evaluates fit of model to data using OLS regression.
+def evaluate_model(model, data):
+    # import pdb; pdb.set_trace()
     
-    Parameters
-        model: 
-        data
-
-    Returns
-        tvalues
-        betas
-        pvalues
-    """
-    
-    model = sm.add_constant(model.rdm.transpose());
+    model= sm.add_constant(model.rdm.transpose());
     data = data.dissimilarities.transpose();
     
     # to filter out potential nans in the model part
@@ -525,37 +616,76 @@ def evaluate_model(
     filtered_model = model[~nan_filter]
     filtered_data = data[~nan_filter]
     
-    # estimate OLS model
+    # Instantiate Ordinary Least Squares model and fit it
     est = sm.OLS(filtered_data, filtered_model).fit()
-
-    # return the tvalues, betas and pvalues
+    
+    # Return the t-values, beta-values and p-values
     return est.tvalues[1:], est.params[1:], est.pvalues[1:]
     
 
+def evaluate_model_extra_condition(
+        
+):
+    # get the lower triangle from : 
+        # data
+        # model 
 
-def prepare_model_data(model_data, number_conditions, RDM_version):
+    pass
 
+
+def prepare_model_data(model_data: np.array,
+                       no_Conditions: int, 
+                       RDM_version: str):
+    """
+    
+    Parameters
+        model_data: N x no_Conditions matrix. 
+            Each column is a condition and each row is a thoertical voxel that will be used to make an RDM matrix in the `rsr.calc_rdm` function
+        no_Conditions: int : number of conditions in the model data
+        RDM_version:
+    
+        
+    Returns
+        RSA_tb_model_data_object: rsd.Dataset : model data object for the RSA analysis. 
+            The object contains the model data in the correct format for the RSA analysis.
+    """
+    # import pdb; pdb.set_trace()
     model_data = model_data.transpose()
-    if RDM_version in ['01', '01-1']:
+
+    # Get the number of conditions 
+    if RDM_version in ['01', '01-1', '01-2']:
         nCond = model_data.shape[0]
     else:
         nCond = model_data.shape[0]/2
+
+    # Get the number of voxels
     nVox = model_data.shape[1]
-    sessions = np.concatenate((np.zeros(int(np.shape(model_data)[0]/2)), np.ones(int(np.shape(model_data)[0]/2))))
+
+
+    sessions = np.concatenate(
+        (np.zeros(int(np.shape(model_data)[0]/2)),
+          np.ones(int(np.shape(model_data)[0]/2)))
+          )
+    
     des = {'subj': 1}
-    if RDM_version in ['01', '01-1']:
-        conds = np.reshape(np.tile((np.array(['cond_%02d' % x for x in np.arange(nCond)])),(1)).transpose(),number_conditions)
+
+    if RDM_version in ['01', '01-2']:
+        conds = np.reshape(np.tile((np.array(['cond_%02d' % x for x in np.arange(nCond)])),(1)).transpose(),no_Conditions)
     else: 
-        conds = np.reshape(np.tile((np.array(['cond_%02d' % x for x in np.arange(nCond)])), (1,2)).transpose(),number_conditions*2)
+        conds = np.reshape(np.tile((np.array(['cond_%02d' % x for x in np.arange(nCond)])), (1,2)).transpose(),no_Conditions*2)
+    
     obs_des = {'conds': conds, 'sessions': sessions}
+
     chn_des = {'voxels': np.array(['voxel_' + str(x) for x in np.arange(nVox)])}
+    
+    # RSA data object
     RSA_tb_model_data_object = rsd.Dataset(measurements=model_data,
-                       descriptors=des,
-                       obs_descriptors=obs_des,
-                       channel_descriptors=chn_des)
+                                           descriptors=des,
+                                           obs_descriptors=obs_des,
+                                           channel_descriptors=chn_des)
+    
+    
     return RSA_tb_model_data_object
-
-
 
 
 def analyse_pathlength_beh(df):
@@ -646,20 +776,32 @@ def analyse_pathlength_beh(df):
 
 
 
-def similarity_of_tasks(reward_per_task_per_taskhalf_dict):
+def similarity_of_tasks(
+        reward_per_task_per_taskhalf_dict: dict,
+        RDM_VERSION: str
+        ) -> dict:
+    """
+    
+    Notes: 
+    - `corrected_RSM_dict` is a dictionary that will store the corrected RSM for each model
+
+
+    """
     # import pdb; pdb.set_trace() 
+    assert RDM_VERSION in ['01'], f"The Regression version {RDM_VERSION} is not compatible with this function."
     
     # first, put the contents of the task-half dict into one.
-    def flatten_nested_dict(nested_dict):
-        flattened_dict = {}
-        for key, value in nested_dict.items():
-            if isinstance(value, dict):  # If the value is a dictionary, extend the flat dictionary with its items
-                flattened_dict.update(value)
-            else:
-                flattened_dict[key] = value
-        return flattened_dict
+    # def flatten_nested_dict(nested_dict):
+    #     flattened_dict = {}
+    #     for key, value in nested_dict.items():
+    #         if isinstance(value, dict):  # If the value is a dictionary, extend the flat dictionary with its items
+    #             flattened_dict.update(value)
+    #         else:
+    #             flattened_dict[key] = value
+    #     return flattened_dict
+    # rewards_experiment = flatten_nested_dict(reward_per_task_per_taskhalf_dict)
     
-    rewards_experiment = flatten_nested_dict(reward_per_task_per_taskhalf_dict)
+    rewards_experiment = utils.flatten_nested_dict(reward_per_task_per_taskhalf_dict)
     
     all_rewards = []
     all_names = []
@@ -670,9 +812,9 @@ def similarity_of_tasks(reward_per_task_per_taskhalf_dict):
     
     
     # create 3 binary RDMs:
-        # first, those that are backwards vs those that are forwards.
-        # second, those that are executed in the same order.
-        # third, those that are presented in the same order.
+        # 1. those that are backwards vs those that are forwards.
+        # 2. those that are executed in the same order.
+        # 3. those that are presented in the same order.
     
     
     # first, all those that are presented in a forward or backward way are equal.
@@ -699,20 +841,23 @@ def similarity_of_tasks(reward_per_task_per_taskhalf_dict):
         if task_name.endswith('backw'):
             presented_rewards[i].reverse()
 
-    
+    # Creating the presentation similarity matrix 
     presentation_similarity = np.zeros((len(all_rewards), len(all_rewards)*4)) # this is -0.012658227848101285 and 1
     for i in range(len(presented_rewards)):
         for j in range(len(presented_rewards)):
             if presented_rewards[i] == presented_rewards[j]:
                 presentation_similarity[i, j] = 1
     
+    # initialise corrected_RSM_dict
+    corrected_RSM_dict = {}
+    # for model in all_models_dict.keys(): # the list of models that want to be analyised, note that that "all_models_dict" is not currently passed to the function
+    for model in ['direction_presentation', 'execution_similarity', 'presentation_similarity']:
+        np.corrcoef(presentation_similarity[:, :10])
+        # corrected_model = (presentation_similarity[:, :10] + np.transpose(presentation_similarity[:, :10]))/2
+        corrected_model = (presentation_similarity[:, :10] + presentation_similarity[:, :10])/2
+        
+        corrected_RSM_dict[model] = corrected_model[0:int(len(corrected_model)/2), int(len(corrected_model)/2):]
     
-    import pdb; pdb.set_trace() 
-    corrected_RSM_dict = {} # created corrected_RSM_dict 
-    np.corrcoef(presentation_similarity[:, :10])
-    corrected_model = (presentation_similarity[:, :10] + np.transpose(presentation_similarity[:, :10]))/2
-    corrected_RSM_dict[model] = corrected_model[0:int(len(corrected_model)/2), int(len(corrected_model)/2):]
-   
         
     # to create the right format, split this into two task halves again
     # import pdb; pdb.set_trace() 
@@ -731,9 +876,130 @@ def similarity_of_tasks(reward_per_task_per_taskhalf_dict):
 
     # import pdb; pdb.set_trace()   
     # CONTINUE HERE!!! THE  PRESENT SIM ISNT QUITE RIGHT YET!
+
+    """
+    Returns the executation simlartiy 
+    
+    """
+
+
+
     return models_between_tasks
 
+def get_configs_dict(
+        directory: str,
+        sub: str,
+        ) -> dict:
+    """
+    Function to return the configurations dictionary from the behavioural data
+
+    Returns a dictionary containing the configurations for each task half
+        configs_dict {task_half: {config_id: reward_points, ...}, ...}
     
+    """
+
+
+
+    # get_configs_dict from behavioural data
+    configs_dict = {}
+    for task_half in ['1', '2']:
+
+        file = directory / f"{sub}_fmri_pt{task_half}.csv"
+        # 1. Extract the behavioural data from the .csv to appropriate dictionaries
+        _, rew_list, _, _, _, _, _, _ = analyse_MRI_behav.extract_behaviour(file)
+
+        configs_dict[task_half] = rew_list
+
+    return configs_dict
+
+
+def get_execution_order(
+        configs_dict: dict
+    ) -> dict:
+    """
+    Returns a dictionary containing the execution order of the tasks in the experiment.
+    """
+
+
+    execution_order = {
+        '1': list(configs_dict['1'].keys()),
+        '2': list(configs_dict['2'].keys())
+    }
+
+    # flatten dictionary
+    # configs = utils.flatten_nested_dict(configs_dict)
+
+    # for idx, config in enumerate(configs):
+    #     if idx < 10:
+    #         execution_order['1'].append(config)
+    #     else:
+    #         execution_order['2'].append(config)
+
+    # # Get a list of all of the reward points in the task 
+    # all_rewards = []
+    # for task in sorted(configs.keys()):
+    #     all_rewards.append(configs[task])
+
+    # # for each pair of reward points check which ones are the same
+    # execution_similarity = np.zeros((len(all_rewards), len(all_rewards))) # this is -0.012658227848101285 and 1
+    # for i in range(len(all_rewards)):
+    #     for j in range(len(all_rewards)):
+    #         if all_rewards[i] == all_rewards[j]:
+    #             execution_similarity[i, j] = 1
+    # 
+
+    return execution_order
+
+
+def auto_corr_RSM_dict(RSM_dict_betw_TH: dict) -> dict:
+        """
+        Create a corrected RSM dictionary by averaging the lower or upper triangles of the RSMs
+        # then average the lower triangle and the top triangle of this nCond x nCond matrix, 
+        # by adding it to its transpose, dividing by 2, and taking only the lower or 
+        # upper triangle of the result.   
+
+        Creates the correlation between task halves matrix  
+        removes temporal correlation by averaging the off diagronal of part 1 and part 2 of the whole RSM
+
+        Parameters
+
+        Returns
+            Corrected RSM dictionary. This entry contains the corrected RSM for each model
+
+        """
+        corrected_RSM_dict = {}
+        for model in RSM_dict_betw_TH:
+            # import pdb; pdb.set_trace()
+            corrected_model = (RSM_dict_betw_TH[model] + np.transpose(RSM_dict_betw_TH[model]))/2
+            corrected_RSM_dict[model] = corrected_model[0:int(len(corrected_model)/2), int(len(corrected_model)/2):]
+        return corrected_RSM_dict
+
+
+def auto_corr_RDM_obj(
+        RDM_obj: RDMs
+    ) -> RDMs:
+    """
+    Removes autocorrelation from the RDM object by averaging the lower or upper triangles of the RDMs
+    """
+    
+    # Create a copy of the RDM object
+    corrected_RDM_obj = RDM_obj.copy()
+
+    # Get the RDM from the RDM object
+    RDM_array = corrected_RDM_obj.dissimilarities
+
+    corrected_RDM = (RDM_array + np.transpose(RDM_array)) / 2
+    corrected_RDM = corrected_RDM[0:int(len(corrected_RDM)/2), int(len(corrected_RDM)/2):]
+
+    # Update the RDM in the RDM object
+    corrected_RDM_obj.dissimilarities = corrected_RDM
+
+    # Update the labels of the RDM object
+    
+
+    # Return the copy of the RDM object with the corrected RDM
+    return corrected_RDM_obj
+
 
 def plot_trajectories(data):
     # Set up the figure and axis
@@ -775,3 +1041,5 @@ def plot_trajectories(data):
 
 
 
+if __name__ == "__main__":
+    print("This is the analyse_MRI_behav.py script.")

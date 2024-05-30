@@ -314,32 +314,21 @@ def get_data_rdms(
 
     data_rdms_dict = {}
     with tqdm(total=len(data_searchlight), desc='Creating RDMS...') as pbar:
-    #     def process_center(center):
-    #         df = data_searchlight[center]
-    #         rdm = get_rdm_from_df(df, SIZE)
-
-    #         # Clear memory after each iteration
-    #         del df
-
-    #         return center, rdm
-
-    #     num_cores = os.cpu_count()
-    #     results = Parallel(n_jobs=num_cores)(delayed(process_center)(center) for center in data_searchlight)
-
-    #     for center, rdm in results:
-    #         data_rdms_dict[center] = rdm
-    #         pbar.update(1)
-
-        for center in data_searchlight:
+        def process_center(center):
             df = data_searchlight[center]
             rdm = get_rdm_from_df(df, SIZE)
 
             # Clear memory after each iteration
             del df
 
+            return center, rdm
+
+        num_cores = os.cpu_count()
+        results = Parallel(n_jobs=num_cores)(delayed(process_center)(center) for center in data_searchlight)
+
+        for center, rdm in results:
             data_rdms_dict[center] = rdm
             pbar.update(1)
-
 
     return data_rdms_dict
 

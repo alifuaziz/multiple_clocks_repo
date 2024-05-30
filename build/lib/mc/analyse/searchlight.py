@@ -17,7 +17,8 @@ from scipy.spatial.distance import cdist
 from tqdm import tqdm
 from joblib import Parallel, delayed
 from rsatoolbox.data.dataset import Dataset
-from rsatoolbox.rdm.calc import calc_rdm
+from mc.analyse.calc import calc_rdm
+# from rsatoolbox.rdm.calc import calc_rdm
 from rsatoolbox.rdm import RDMs
 
 
@@ -32,14 +33,16 @@ def _get_searchlight_neighbors(mask, center, radius=3):
         list: the list of volume indices that respect the
                 searchlight radius for the input center.
     """
+    # 3D point around which the searchlight is made
     center = np.array(center)
+    # get the size of the mask array 
     mask_shape = mask.shape
     cx, cy, cz = np.array(center)
     x = np.arange(mask_shape[0])
     y = np.arange(mask_shape[1])
     z = np.arange(mask_shape[2])
 
-    # First mask the obvious points
+    # First mask the obvious points to the points that are within the radius of the centre point
     # - may actually slow down your calculation depending.
     x = x[abs(x - cx) < radius]
     y = y[abs(y - cy) < radius]
@@ -83,13 +86,16 @@ def get_volume_searchlight(mask, radius=2, threshold=1.0):
     mask = np.array(mask)
     assert mask.ndim == 3, "Mask needs to be a 3-dimensional numpy array"
 
+    # Finding the indicies of the non-zero voxels
     centers = list(zip(*np.nonzero(mask)))
     good_centers = []
     good_neighbors = []
 
     for center in tqdm(centers, desc='Finding searchlights...'):
         neighbors = _get_searchlight_neighbors(mask, center, radius)
+        # check if the proportion of the neighbours are within the mask is greater than threshold
         if mask[neighbors].mean() >= threshold:
+            # if so, add the center and the neighbours to the list, otherwise they are excluded
             good_centers.append(center)
             good_neighbors.append(neighbors)
 
@@ -100,6 +106,7 @@ def get_volume_searchlight(mask, radius=2, threshold=1.0):
 
     # turn the 3-dim coordinates to array coordinates
     centers = np.ravel_multi_index(good_centers.T, mask.shape)
+    # list of the flattened indices of the neighbours
     neighbors = [np.ravel_multi_index(n, mask.shape) for n in good_neighbors]
 
     return centers, neighbors
@@ -153,7 +160,7 @@ def get_searchlight_RDMs(data_2d, centers, neighbors, events,
         # loop over chunks
         n_conds = len(np.unique(events))
         RDM = np.zeros((n_centers, n_conds * (n_conds - 1) // 2))
-        for chunks in tqdm(chunked_center, desc='Calculating Searchlight RDMs...'):
+        for chunks in tqdm(chunked_center, desc='Calculating RDMs...'):
             center_data = []
             for c in chunks:
                 # grab this center and neighbors
