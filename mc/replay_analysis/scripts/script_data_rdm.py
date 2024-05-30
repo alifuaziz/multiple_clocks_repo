@@ -20,32 +20,18 @@ import mc.replay_analysis.functions.data_rdms as data_rdms
 import mc.analyse.analyse_MRI_behav as analyse_MRI_behav
 from mc.analyse.searchlight import get_volume_searchlight
 
-# %% Define the Subject data and the EVs that are being used to create the RDMs
-SUB = "sub-03"
-EVS_TYPE = 'instruction_period'
-MODEL_TYPE = 'replay'
-RDM_SIZE = "cross_corr"
-TASK_HALVES = ['1', '2']
-RDM_VERSION = '01'
-
-# LOADING IN PICK FILES 
-LOAD_VOLU_SEARCHLIGHT = False
-LOAD_DATA_SEARCHLIGHT = False
-LOAD_DATA_RDM = False
+#%% Define the Subject data and the EVs that are being used to create the RDMs
+# SUB = "sub-02"
+# EVS_TYPE = 'instruction_period'
+# MODEL_TYPE = 'replay'
+# RDM_SIZE = "cross_corr"
+# TASK_HALVES = ['1', '2']
+# RDM_VERSION = '01'
 
 
+# SUBJECT_DIRECTORY = '/Users/student/PycharmProjects/data/derivatives/' + SUB + '/'
+# RESULTS_DIRECTORY = '/Users/student/PycharmProjects/data/derivatives/' + SUB + '/func/RSA_replay/'
 
-SUBJECT_DIRECTORY = Path('/home/fs0/chx061/scratch/data/derivatives/' + SUB + '/')
-RESULTS_DIRECTORY = Path('/home/fs0/chx061/scratch/data/derivatives/' + SUB + '/func/RSA_replay/')
-# Create the directories if they do not exist
-if not RESULTS_DIRECTORY.exists():
-    RESULTS_DIRECTORY.mkdir(parents=True)
-if not SUBJECT_DIRECTORY.exists():
-    SUBJECT_DIRECTORY.mkdir(parents=True)
-
-
-
-# %%
 
 
 def replay_analysis(**analysis_options):
@@ -186,7 +172,6 @@ def replay_analysis(**analysis_options):
 
 
     #%% Convert the Data RDMs to upper triangle vectors for RSA 
-
     data_rdms_tri = data_rdms.get_data_rdms_tri(
         data_rdms_dict = data_rdms_dict
         )
