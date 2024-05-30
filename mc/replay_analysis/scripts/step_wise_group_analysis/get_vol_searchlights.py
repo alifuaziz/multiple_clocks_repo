@@ -96,3 +96,8 @@ def main(
     # Save the vol_searchlight to a pickle file
     with open(f"{SUBJECT_DIRECTORY}/vol_searchlight_df.pkl", 'wb') as f:
         pickle.dump(vol_searchlight, f)
+
+    # Save the data_searchlight to a pickle file
+    with open(f"{SUBJECT_DIRECTORY}/data_searchlight_df.pkl", 'wb') as f:
+        pickle.dump(data_searchlight, f)
+        
