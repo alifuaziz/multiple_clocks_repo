@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import statsmodels.api  as sm
 from joblib import Parallel, delayed
+from scipy.spatial.distance import pdist, squareform
 
 def get_EV_path_dict(
         subject_directory: str,
@@ -314,21 +315,33 @@ def get_data_rdms(
 
     data_rdms_dict = {}
     with tqdm(total=len(data_searchlight), desc='Creating RDMS...') as pbar:
-        def process_center(center):
+        # def process_center(center):
+        #     df = data_searchlight[center]
+        #     rdm = get_rdm_from_df(df, SIZE)
+
+        #     # Clear memory after each iteration
+        #     del df
+
+        #     return center, rdm
+
+        # num_cores = os.cpu_count()
+        # results = Parallel(n_jobs=num_cores)(delayed(process_center)(center) for center in data_searchlight)
+
+        # for center, rdm in results:
+        #     data_rdms_dict[center] = rdm
+        #     pbar.update(1)
+
+
+        for center in data_searchlight:
             df = data_searchlight[center]
             rdm = get_rdm_from_df(df, SIZE)
 
             # Clear memory after each iteration
             del df
 
-            return center, rdm
-
-        num_cores = os.cpu_count()
-        results = Parallel(n_jobs=num_cores)(delayed(process_center)(center) for center in data_searchlight)
-
-        for center, rdm in results:
             data_rdms_dict[center] = rdm
             pbar.update(1)
+
 
     return data_rdms_dict
 
@@ -360,8 +373,7 @@ def dissimilarity_measure(
         raise ValueError("The similarity measure must be either 'pearson' or 'cosine'.")
     
 
-
-def get_rdm_from_df(df: dict,
+def get_rdm_from_df(df: pd.DataFrame,
                     SIZE: str,
                     MEASURE: str = "pearson"
                     ) -> pd.DataFrame:
@@ -375,10 +387,8 @@ def get_rdm_from_df(df: dict,
     - rdm (pd.DataFrame): A DataFrame containing the RDM.
     """
 
-    rdm = np.zeros((df.shape[1], df.shape[1]))
-    for ev1_idx, EV1 in enumerate(df.T.to_numpy()):
-        for ev2_idx, EV2 in enumerate(df.T.to_numpy()):
-            rdm[ev1_idx, ev2_idx] = dissimilarity_measure(EV1, EV2, MEASURE)
+    rdm = pdist(df.T.to_numpy(), metric=dissimilarity_measure)
+    rdm = squareform(rdm)
 
     # create the RDM DataFrame
     rdm = pd.DataFrame(rdm, columns=df.columns, index=df.columns)
@@ -392,12 +402,45 @@ def get_rdm_from_df(df: dict,
         # What is the naming convention for this?
 
         return rdm
+
+    
+# def get_rdm_from_df(df: dict,
+#                 SIZE: str,
+#                 MEASURE: str = "pearson"
+#                 ) -> pd.DataFrame:
+#     """
+#     Calculate the RDM from a DataFrame.
+
+#     Parameters:
+#     - df (pd.DataFrame): A DataFrame containing the data for the RDM.
+
+#     Returns:
+#     - rdm (pd.DataFrame): A DataFrame containing the RDM.
+#     """
+
+#     rdm = np.zeros((df.shape[1], df.shape[1]))
+#     for ev1_idx, EV1 in enumerate(df.T.to_numpy()):
+#         for ev2_idx, EV2 in enumerate(df.T.to_numpy()):
+#             rdm[ev1_idx, ev2_idx] = dissimilarity_measure(EV1, EV2, MEASURE)
+
+#     # create the RDM DataFrame
+#     rdm = pd.DataFrame(rdm, columns=df.columns, index=df.columns)
+
+#     # sort the dataframe into the two halves order
+#     rdm = sort_data_searchlight(rdm, conditions_type="two_halves")
+
+#     if SIZE == "cross_corr":
+#         # We are only going to return the comparison between part 1 and part 2 of the task 
+#         rdm = rdm.iloc[:10, 10:] + np.transpose(rdm.iloc[10:, :10]) / 2
+#         # What is the naming convention for this?
+
+#         return rdm
             
-        # corrected_model = (RSM_dict_betw_TH[model] + np.transpose(RSM_dict_betw_TH[model]))/2
-        # corrected_RSM_dict[model] = corrected_model[0:int(len(corrected_model)/2), int(len(corrected_model)/2):]
-    else:
-        # Return the whole array
-        return rdm
+#         # corrected_model = (RSM_dict_betw_TH[model] + np.transpose(RSM_dict_betw_TH[model]))/2
+#         # corrected_RSM_dict[model] = corrected_model[0:int(len(corrected_model)/2), int(len(corrected_model)/2):]
+#     else:
+#         # Return the whole array
+#         return rdm
 
 
 
@@ -472,6 +515,11 @@ def get_data_rdms_tri(
                 label_arr[idx1, idx2] = f"{EV_column} vs {EV_index}"
 
         return label_arr[np.tril_indices(label_arr.shape[0], k=0)]
+    
+
+    # NOTE: The labels are the same for all data RDMS so the function should be removed from the for loop
+    rdm = data_rdms_dict[list(data_rdms_dict.keys())[0]]
+    row_labels = get_row_labels(rdm.columns, rdm.index)
 
     data_rdms_tri = {}
     # for each RDM 
@@ -480,8 +528,6 @@ def get_data_rdms_tri(
         # get the lower triangle of the RDM
         data_rdms_tri[center] = rdm.values[np.tril_indices(rdm.shape[0], k = 0)]
         # create list of correct comparison indicies to label the rows of the data
-        # NOTE: The labels are the same for all data RDMS so the function should be removed from the for loop
-        row_labels = get_row_labels(rdm.columns, rdm.index)
     # print(row_labels)
 
     data_rdms_tri = pd.DataFrame(data_rdms_tri)
