@@ -64,14 +64,14 @@ def main(
 
 
     mask = load_img(f"{SUBJECT_DIRECTORY}/anat/{SUB}_T1w_noCSF_brain_mask_bin_func_01.nii.gz")
-    print(mask.shape)
-    mask = mask.get_fdata()
-    print(mask.shape)
+    # print(mask.shape)
+    mask_array = mask.get_fdata()
+    # print(mask.shape)
 
 
     # Get list of voxel centers and their volume neighbours
     centers, vol_neighbors = get_volume_searchlight(
-        mask = mask,
+        mask = mask_array,
         radius = 3,
         threshold = 0.5)
 
@@ -96,3 +96,7 @@ def main(
     # Save the vol_searchlight to a pickle file
     with open(f"{SUBJECT_DIRECTORY}/vol_searchlight_df.pkl", 'wb') as f:
         pickle.dump(vol_searchlight, f)
+
+    # Save the data_searchlight to a pickle file
+    with open(f"{SUBJECT_DIRECTORY}/data_searchlight_df.pkl", 'wb') as f:
+        pickle.dump(data_searchlight, f)

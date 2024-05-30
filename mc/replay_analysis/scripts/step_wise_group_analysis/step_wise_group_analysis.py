@@ -15,20 +15,22 @@ from time import time
 from mc.replay_analysis.scripts import model_RDM_alif as model_RDM
 from mc.replay_analysis.scripts import data_RDM_alif  as data_RDM
 
-from mc.replay_analysis.scripts.step_wise_group_analysis import get_vol_searchlights
+import get_vol_searchlights
 
 # Create subject list from data folder 
-data_folder = Path("/Users/student/PycharmProjects/data")
+# data_folder = Path("/Users/student/PycharmProjects/data")
+data_folder = Path("/home/fs0/chx061/scratch/data")
 derivatives_folder = data_folder / "derivatives"
 subject_list = [f for f in derivatives_folder.iterdir() if f.is_dir()]
-subject_list = subject_list[1::]
+subject_list = sorted(subject_list)
+# subject_list = subject_list[3::]
 
-DATA_FOLDER = Path("/Users/student/PycharmProjects/data")
+DATA_FOLDER = Path("/home/fs0/chx061/scratch/data")
 
 
 META_DATA = \
     {  
-        'SUBJECT_DIRECTORY': '/Users/student/PycharmProjects/data/derivatives/sub-02/',
+        'SUBJECT_DIRECTORY': str(DATA_FOLDER) + '/derivatives/sub-02/',
         'SUB': 'sub-02',
         'EVS_TYPE': 'instruction_period',
         'RDM_VERSION': '01',
@@ -40,7 +42,8 @@ META_DATA = \
 for subject in subject_list:
 
     # UPDATE THE META_DATA for each subject
-    META_DATA['SUBJECT_DIRECTORY'] = str(DATA_FOLDER) + '/derivatives/' + str(subject)[-6:] + '/'
+    META_DATA['SUBJECT_DIRECTORY'] = str(DATA_FOLDER) + '/derivatives/' + str(subject)[-6:]
+    META_DATA['SUB'] = str(subject)[-6:]
 
     print('Running script for subject: ', META_DATA['SUBJECT_DIRECTORY'])
     # Run the script
