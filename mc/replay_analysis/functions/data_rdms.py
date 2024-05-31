@@ -424,7 +424,7 @@ def get_rdm_from_df(df: dict,
     # Is this done in the correct order. The main question is whether the RDM EVs are the in the correct order 
     # Are they comparing the correct conditions to each other. If not they it is getting the wrong RDM
     # df = sort_data_searchlight(df, conditions_type="two_halves")
-
+    df = df.loc[:, get_standard_order()]
 
     # Convert df to numpy array
     df_np = df.to_numpy()
@@ -438,8 +438,10 @@ def get_rdm_from_df(df: dict,
     # create the RDM DataFrame
     rdm = pd.DataFrame(rdm, columns=df.columns, index=df.columns)
 
+
+
     # sort the dataframe into the two halves order
-    rdm = sort_data_searchlight(rdm, conditions_type="two_halves")
+    # rdm = sort_data_searchlight(rdm, conditions_type="two_halves")
 
 
     rdm = rdm.iloc[:10, 10:]
