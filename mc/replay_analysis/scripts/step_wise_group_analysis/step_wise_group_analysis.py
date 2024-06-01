@@ -54,28 +54,28 @@ META_DATA = \
 #     pass
 
 
-# for subject in subject_list:
+for subject in subject_list:
 
-#     # UPDATE THE META_DATA for each subject
-#     META_DATA['SUBJECT_DIRECTORY'] = str(DATA_FOLDER) + '/derivatives/' + str(subject)[-6:]
-#     META_DATA['SUB'] = str(subject)[-6:]
+    # UPDATE THE META_DATA for each subject
+    META_DATA['SUBJECT_DIRECTORY'] = str(DATA_FOLDER) + '/derivatives/' + str(subject)[-6:]
+    META_DATA['SUB'] = str(subject)[-6:]
 
-#     print('Running script for subject: ', META_DATA['SUBJECT_DIRECTORY'])
+    print('Running script for subject: ', META_DATA['SUBJECT_DIRECTORY'])
 
-#     # Run the script
-#     get_data_rdms.main(META_DATA = META_DATA)
+    # Run the script
+    get_data_rdms.main(META_DATA = META_DATA)
 
-#     pass
+    pass
 
 
-# for subject in subject_list:
-#     # UPDATE THE META_DATA for each subject
-#     META_DATA['SUBJECT_DIRECTORY'] = str(DATA_FOLDER) + '/derivatives/' + str(subject)[-6:]
-#     META_DATA['SUB'] = str(subject)[-6:]
+for subject in subject_list:
+    # UPDATE THE META_DATA for each subject
+    META_DATA['SUBJECT_DIRECTORY'] = str(DATA_FOLDER) + '/derivatives/' + str(subject)[-6:]
+    META_DATA['SUB'] = str(subject)[-6:]
 
-#     print('Running script for subject: ', META_DATA['SUBJECT_DIRECTORY'])
+    print('Running script for subject: ', META_DATA['SUBJECT_DIRECTORY'])
 
-#     # Run the script
-#     evaluate_rsa.main(META_DATA = META_DATA)
+    # Run the script
+    evaluate_rsa.main(META_DATA = META_DATA)
     
-#     pass
+    pass
