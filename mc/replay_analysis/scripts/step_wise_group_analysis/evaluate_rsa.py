@@ -46,11 +46,27 @@ def main(
         data_rdms_dict = model_rdms_dict
         )
 
-    # Evaluate the model
-    eval_result = Parallel(n_jobs=1)(delayed(data_rdms.evaluate_model)(
-        Y = model_rdms_dict_tri['replay'],                                                      # Model that is being evaluated              
-        X = data_rdms_tri[searchlight]
-        ) for searchlight in tqdm(data_rdms_tri.columns, desc = "Data Searchlights Running"))   # (from the list of data RDMs)
+
+    eval_result = []
+    for searchlight in tqdm(data_rdms_tri.columns, desc = "Data Searchlights Running"):
+        # Evaluate the model
+        eval_result.append(data_rdms.evaluate_model(
+            Y = model_rdms_dict_tri['replay'],                                                      # Model that is being evaluated              
+            X = data_rdms_tri[searchlight]
+            )
+        )
+        # Save to the nii.gz files
+        data_rdms.save_RSA_result(
+        eval_result = eval_result,
+        searchlight = searchlight,
+        subject_directory = SUBJECT_DIRECTORY
+        )
+
+    # # Evaluate the model
+    # eval_result = Parallel(n_jobs=1)(delayed(data_rdms.evaluate_model)(
+    #     Y = model_rdms_dict_tri['replay'],                                                      # Model that is being evaluated              
+    #     X = data_rdms_tri[searchlight]
+    #     ) for searchlight in tqdm(data_rdms_tri.columns, desc = "Data Searchlights Running"))   # (from the list of data RDMs)
 
 
 
