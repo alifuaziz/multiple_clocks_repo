@@ -11,20 +11,19 @@ After each stage is performed we run the next step
 from pathlib import Path
 from time import time
 
-# Imoport custom scripts
-from mc.replay_analysis.scripts import model_RDM_alif as model_RDM
-from mc.replay_analysis.scripts import data_RDM_alif  as data_RDM
-
-from mc.replay_analysis.scripts.step_wise_group_analysis import get_vol_searchlights
-from mc.replay_analysis.scripts.step_wise_group_analysis import get_data_rdms
-from mc.replay_analysis.scripts.step_wise_group_analysis import evaluate_rsa
+# Import custom scripts
+import get_data_rdms
+import evaluate_rsa
 
 # Create subject list from data folder 
-data_folder = Path("/Users/student/PycharmProjects/data")
-# data_folder = Path("/home/fs0/chx061/scratch/data")
+# data_folder = Path("/Users/student/PycharmProjects/data")
+data_folder = Path("/home/fs0/chx061/scratch/data")
 derivatives_folder = data_folder / "derivatives"
 subject_list = [f for f in derivatives_folder.iterdir() if f.is_dir()]
-subject_list = subject_list[1::]
+subject_list = sorted(subject_list)
+subject_list = subject_list[:20] + subject_list[21:]    # Remove the 20th element of the list
+
+
 
 DATA_FOLDER = data_folder
 
