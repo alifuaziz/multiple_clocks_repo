@@ -426,25 +426,19 @@ def get_rdm_from_df(df: dict,
     # df = sort_data_searchlight(df, conditions_type="two_halves")
     df = df.loc[:, get_standard_order()]
 
-    # Convert df to numpy array
-    df_np = df.to_numpy()
-
-    # Calculate the RDM
-    for ev1_idx, EV1 in enumerate(df_np.T):
-        for ev2_idx, EV2 in enumerate(df_np.T):
-            if ev1_idx < 10 and ev2_idx >=10:
-                rdm[ev1_idx, ev2_idx] = dissimilarity_measure(EV1, EV2, MEASURE)
-
+    ma = df.to_numpy().T
+    # # Replace NaN values with 0
+    # ma = np.nan_to_num(ma)
+    # Normalising the matrix (mean = 0)
+    ma = ma - ma.mean(axis=1, keepdims=True)
+    # Normalising the matrix (std = 1)
+    ma /= np.sqrt(np.einsum('ij,ij->i', ma, ma))[:, None]
+    # Computing the dot product of the matrix
+    rdm = np.einsum('ik,jk', ma, ma)
     # create the RDM DataFrame
     rdm = pd.DataFrame(rdm, columns=df.columns, index=df.columns)
-
-
-
-    # sort the dataframe into the two halves order
-    # rdm = sort_data_searchlight(rdm, conditions_type="two_halves")
-
-
-    rdm = rdm.iloc[:10, 10:]
+    # 
+    rdm = rdm.iloc[:10, 10:] + np.transpose(rdm.iloc[10:, :10]) / 2
 
     return rdm
 
@@ -626,7 +620,12 @@ def evaluate_model(
     X = sm.add_constant(X)
     # print(X.shape, Y.shape)
 
+    # Replace NaN values with 0
+    X = np.nan_to_num(X)
+
+    # remove any rows with NaN values 
     nan_filter = np.isnan(X).any(axis=1)
+
     X = X[~nan_filter]
     Y = Y[~nan_filter]
 

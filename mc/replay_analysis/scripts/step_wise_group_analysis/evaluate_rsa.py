@@ -6,6 +6,7 @@ from mc.replay_analysis.functions import data_rdms
 from mc.replay_analysis.functions import model_rdms
 
 from joblib import Parallel, delayed
+from nilearn.image import load_img
 
 
 def main(    
@@ -55,27 +56,21 @@ def main(
             X = data_rdms_tri[searchlight]
             )
         )
-        # Save to the nii.gz files
-        data_rdms.save_RSA_result(
-        eval_result = eval_result,
-        searchlight = searchlight,
-        subject_directory = SUBJECT_DIRECTORY
-        )
 
+    mask = load_img(f"{SUBJECT_DIRECTORY}/anat/{SUB}_T1w_noCSF_brain_mask_bin_func_01.nii.gz")
+
+    data_rdms.save_RSA_result(
+        results_file = eval_result,
+        data_rdms_tri = data_rdms_tri,
+        mask = mask,
+        results_directory = SUBJECT_DIRECTORY,
+    )
     # # Evaluate the model
     # eval_result = Parallel(n_jobs=1)(delayed(data_rdms.evaluate_model)(
     #     Y = model_rdms_dict_tri['replay'],                                                      # Model that is being evaluated              
     #     X = data_rdms_tri[searchlight]
     #     ) for searchlight in tqdm(data_rdms_tri.columns, desc = "Data Searchlights Running"))   # (from the list of data RDMs)
 
-
-
-    # Save to the nii.gz files
-    data_rdms.save_RSA_result(
-    eval_result = eval_result,
-    searchlight = data_rdms_tri.columns,
-    subject_directory = SUBJECT_DIRECTORY
-    )
 
 
     pass
