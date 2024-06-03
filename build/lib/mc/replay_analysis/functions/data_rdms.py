@@ -695,15 +695,16 @@ def save_RSA_result(
     b_values = np.reshape(b_values, mask.shape)
     p_values = np.reshape(p_values, mask.shape)
 
-    print(t_values.shape)
-
     # save the results to a nifti file
     t_values = nib.Nifti1Image(t_values, mask.affine)
     b_values = nib.Nifti1Image(b_values, mask.affine)
     p_values = nib.Nifti1Image(p_values, mask.affine)
 
-    # save results to the correct directory of the brain 
-    nib.save(t_values, results_directory + 't_values.nii.gz')  
-    nib.save(b_values, results_directory + 'b_values.nii.gz')
-    nib.save(p_values, results_directory + 'p_values.nii.gz')
+    # Create the results directory if it does not exist
+    if not os.path.exists(results_directory + '/results'):
+        os.makedirs(results_directory + '/results')
 
+    # save results to the correct directory of the brain 
+    nib.save(t_values, results_directory + '/results/t_values.nii.gz')  
+    nib.save(b_values, results_directory + '/results/b_values.nii.gz')
+    nib.save(p_values, results_directory + '/results/p_values.nii.gz')

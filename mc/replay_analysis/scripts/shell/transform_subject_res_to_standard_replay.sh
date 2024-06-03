@@ -7,32 +7,36 @@
 
 # Set scratch directory for execution on server
 scratchDir="/home/fs0/chx061/scratch/data"
-scratchDir="/Users/student/PycharmProjects/data"
-export fslDir=/Users/student/fsl
-#fslDir="/opt/fmrib/fsl"
+# scratchDir="/Users/student/PycharmProjects/data"
+# export fslDir=/Users/student/fsl
+fslDir="/opt/fmrib/fsl"
 
 # analysisDir="/home/fs0/chx061/scratch/analysis"
 # scratchDir="/home/fs0/xpsy1114/scratch/data"
 # analysisDir="/home/fs0/xpsy1114/scratch/analysis"
 # export fslDir=~/scratch/fsl
 
-export PATH=$fslDir/share/fsl/bin/:$PATH
-source $fslDir/etc/fslconf/fsl.sh
+# export PATH=$fslDir/share/fsl/bin/:$PATH
+# source $fslDir/etc/fslconf/fsl.sh
 
 glm_version="01"
-RSA_version="replay"
+# RSA_version="replay"
 
 echo now starting transforming all results of glm $glm_version RSA $RSA_version to standard space
 # 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 
 # for subjectTag in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34; do #without 21
 # for subjectTag in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 27 28 29 30 31 32 33 34; do
 
+
+module load fsl
+
 # for every result file
 for subjectTag in 02; do
     # Get the directory of the results
-    resultDir=${scratchDir}/derivatives/sub-${subjectTag}/func/RSA_${RSA_version}_glmbase_${glm_version}/results
+    resultDir=${scratchDir}/derivatives/sub-${subjectTag}/results
+    # resultDir=${scratchDir}/derivatives/sub-${subjectTag}/func/RSA_${RSA_version}_glmbase_${glm_version}/results
     # Get the standard space directory
-    stdDir=${scratchDir}/derivatives/sub-${subjectTag}/func/RSA_${RSA_version}_glmbase_${glm_version}/results-standard-space
+    stdDir=${scratchDir}/derivatives/sub-${subjectTag}/results/results-standard-space
 
     # if the direcotry exists, delete all files in it
     if [ -d $stdDir ]; then
@@ -67,7 +71,7 @@ for subjectTag in 02; do
         # Define the output filename
         output="${stdDir}/${file_name}_std.nii.gz"
         # Transform to standard
-        fsl_sub -q short.q flirt -in "$file" -ref ${preprocDir}/reg/standard.nii.gz -applyxfm -init ${preprocDir}/reg/example_func2standard.mat -out "$output"
+        flirt -in "$file" -ref ${preprocDir}/reg/standard.nii.gz -applyxfm -init ${preprocDir}/reg/example_func2standard.mat -out "$output"
     
     done
 done
