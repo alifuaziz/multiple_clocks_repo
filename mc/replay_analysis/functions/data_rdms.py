@@ -437,8 +437,8 @@ def get_rdm_from_df(df: dict,
     rdm = np.einsum('ik,jk', ma, ma)
     # create the RDM DataFrame
     rdm = pd.DataFrame(rdm, columns=df.columns, index=df.columns)
-    # 
-    rdm = rdm.iloc[:10, 10:] + np.transpose(rdm.iloc[10:, :10]) / 2
+    # Get the average of the bottom left and top right of the RDM
+    rdm = rdm.iloc[:10, 10:] + np.transpose(rdm.iloc[:10, 10:]) / 2
 
     return rdm
 

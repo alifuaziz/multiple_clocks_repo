@@ -14,13 +14,12 @@ from time import time
 # Import custom scripts
 import get_data_rdms
 import evaluate_rsa
-
 # Create subject list from data folder 
-# data_folder = Path("/Users/student/PycharmProjects/data")
-data_folder = Path("/home/fs0/chx061/scratch/data")
+data_folder = Path("/Users/student/PycharmProjects/data")
+# data_folder = Path("/home/fs0/chx061/scratch/data")
 derivatives_folder = data_folder / "derivatives"
 subject_list = [f for f in derivatives_folder.iterdir() if f.is_dir()]
-# subject_list = [sorted(subject_list)[1]]
+subject_list = [sorted(subject_list)[1]]
 # subject_list = subject_list[:20] + subject_list[21:]    # Remove the 20th element of the list
 
 DATA_FOLDER = data_folder

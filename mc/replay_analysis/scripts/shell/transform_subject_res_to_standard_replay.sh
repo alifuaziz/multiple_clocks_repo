@@ -9,13 +9,13 @@
 scratchDir="/home/fs0/chx061/scratch/data"
 scratchDir="/Users/student/PycharmProjects/data"
 export fslDir=/Users/student/fsl
-#fslDir="/opt/fmrib/fsl"
 
 # analysisDir="/home/fs0/chx061/scratch/analysis"
 # scratchDir="/home/fs0/xpsy1114/scratch/data"
 # analysisDir="/home/fs0/xpsy1114/scratch/analysis"
 # export fslDir=~/scratch/fsl
 
+fslDir="/opt/fmrib/fsl"
 export PATH=$fslDir/share/fsl/bin/:$PATH
 source $fslDir/etc/fslconf/fsl.sh
 
