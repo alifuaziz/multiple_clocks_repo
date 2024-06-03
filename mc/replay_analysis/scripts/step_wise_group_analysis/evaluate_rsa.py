@@ -65,12 +65,4 @@ def main(
         mask = mask,
         results_directory = SUBJECT_DIRECTORY,
     )
-    # # Evaluate the model
-    # eval_result = Parallel(n_jobs=1)(delayed(data_rdms.evaluate_model)(
-    #     Y = model_rdms_dict_tri['replay'],                                                      # Model that is being evaluated              
-    #     X = data_rdms_tri[searchlight]
-    #     ) for searchlight in tqdm(data_rdms_tri.columns, desc = "Data Searchlights Running"))   # (from the list of data RDMs)
-
-
-
     pass
