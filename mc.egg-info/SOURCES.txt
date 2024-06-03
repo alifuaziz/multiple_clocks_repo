@@ -26,6 +26,11 @@ mc/replay_analysis/scripts/model_RDM_alif.py
 mc/replay_analysis/scripts/replay_RSA_analysis.py
 mc/replay_analysis/scripts/replay_RSA_model_RDM.py
 mc/replay_analysis/scripts/script_data_rdm.py
+mc/replay_analysis/scripts/step_wise_group_analysis/__init__.py
+mc/replay_analysis/scripts/step_wise_group_analysis/evaluate_rsa.py
+mc/replay_analysis/scripts/step_wise_group_analysis/get_data_rdms.py
+mc/replay_analysis/scripts/step_wise_group_analysis/get_vol_searchlights.py
+mc/replay_analysis/scripts/step_wise_group_analysis/step_wise_group_analysis.py
 mc/simulation/RDMs.py
 mc/simulation/RDMs_save.py
 mc/simulation/__init__.py
