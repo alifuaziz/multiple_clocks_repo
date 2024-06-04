@@ -701,10 +701,10 @@ def save_RSA_result(
     p_values = nib.Nifti1Image(p_values, mask.affine)
 
     # Create the results directory if it does not exist
-    if not os.path.exists(results_directory + '/results'):
-        os.makedirs(results_directory + '/results')
+    if not os.path.exists(results_directory + '/replay/results'):
+        os.makedirs(results_directory + '/replay/results')
 
     # save results to the correct directory of the brain 
-    nib.save(t_values, results_directory + '/results/t_values.nii.gz')  
-    nib.save(b_values, results_directory + '/results/b_values.nii.gz')
-    nib.save(p_values, results_directory + '/results/p_values.nii.gz')
+    nib.save(t_values, results_directory + '/replay/results/t_values.nii.gz')  
+    nib.save(b_values, results_directory + '/replay/results/b_values.nii.gz')
+    nib.save(p_values, results_directory + '/replay/results/p_values.nii.gz')
