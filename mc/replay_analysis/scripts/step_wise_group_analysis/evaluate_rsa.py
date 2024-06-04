@@ -27,8 +27,6 @@ def main(
         data_rdms_dict = data_rdms_dict
     )
 
-
-
     # with open(f"{SUBJECT_DIRECTORY}/searchlight_data_rdms_tri.pkl", 'rb') as f:
     #     data_rdms_tri = pickle.load(f)
 
