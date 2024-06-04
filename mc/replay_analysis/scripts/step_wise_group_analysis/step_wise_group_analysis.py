@@ -15,8 +15,8 @@ from time import time
 import get_data_rdms
 import evaluate_rsa
 # Create subject list from data folder 
-data_folder = Path("/Users/student/PycharmProjects/data")
-# data_folder = Path("/home/fs0/chx061/scratch/data")
+# data_folder = Path("/Users/student/PycharmProjects/data")
+data_folder = Path("/home/fs0/chx061/scratch/data")
 derivatives_folder = data_folder / "derivatives"
 subject_list = [f for f in derivatives_folder.iterdir() if f.is_dir()]
 subject_list = sorted(subject_list)
@@ -50,18 +50,18 @@ META_DATA = \
 #     pass
 
 
-# for subject in subject_list:
+for subject in subject_list:
 
-#     # UPDATE THE META_DATA for each subject
-#     META_DATA['SUBJECT_DIRECTORY'] = str(DATA_FOLDER) + '/derivatives/' + str(subject)[-6:]
-#     META_DATA['SUB'] = str(subject)[-6:]
+    # UPDATE THE META_DATA for each subject
+    META_DATA['SUBJECT_DIRECTORY'] = str(DATA_FOLDER) + '/derivatives/' + str(subject)[-6:]
+    META_DATA['SUB'] = str(subject)[-6:]
 
-#     print('Running script for subject: ', META_DATA['SUBJECT_DIRECTORY'], "!!!!!!!")
+    print('Running script for subject: ', META_DATA['SUBJECT_DIRECTORY'])
 
-#     # Run the script
-#     get_data_rdms.main(META_DATA = META_DATA)
+    # Run the script
+    get_data_rdms.main(META_DATA = META_DATA)
 
-#     pass
+    pass
 
 
 for subject in subject_list:

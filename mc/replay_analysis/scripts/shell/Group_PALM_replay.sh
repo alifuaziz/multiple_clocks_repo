@@ -5,17 +5,17 @@
 # important: run module load palm first!
 
 # Set scratch directory for execution on server
-scratchDir="/Users/student/PycharmProjects/data"
-fslDir="/Users/student/fsl"
+# scratchDir="/Users/student/PycharmProjects/data"
+# fslDir="/Users/student/fsl"
 
-# scratchDir="/home/fs0/xpsy1114/scratch/data"
+scratchDir="/home/fs0/chx061/scratch/data"
 # fslDir="/opt/fmrib/fsl"
 
 glm_version="01"
-RSA_version="01"
+RSA_version="replay"
 palmno="03"
 
-module load palm
+module load PALM
 
 
 # needs to be unzipped files!
@@ -52,7 +52,7 @@ for curr_file in "$groupDir"/*; do
         outPath=$permDir/${file_name}
         echo saving current file in $outPath
 
-        fsl_sub -q long.q palm -i ${curr_file} -T -C $clusterThreshold -Cstat mass -n $permutationNumber -o $outPath -ise -save1-p
+        palm -i ${curr_file} -T -C $clusterThreshold -Cstat mass -n $permutationNumber -o $outPath -ise -save1-p
         echo "Processed: $curr_file"
     fi
 done
