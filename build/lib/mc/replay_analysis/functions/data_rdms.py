@@ -336,9 +336,6 @@ def get_data_rdms(
             df = data_searchlight[center]
             rdm = get_rdm_from_df(df, SIZE)
 
-            # Clear memory after each iteration
-            del df
-
             data_rdms_dict[center] = rdm
             pbar.update(1)
 
@@ -437,8 +434,15 @@ def get_rdm_from_df(df: dict,
     rdm = np.einsum('ik,jk', ma, ma)
     # create the RDM DataFrame
     rdm = pd.DataFrame(rdm, columns=df.columns, index=df.columns)
-    # 
-    rdm = rdm.iloc[:10, 10:] + np.transpose(rdm.iloc[10:, :10]) / 2
+    
+    # get the small 10 x 10 matrix
+    ma = rdm.to_numpy()
+    ma = ma[:10, 10:] + ma[:10, 10:].T 
+    ma = ma / 2
+
+    # create the RDM DataFrame
+    # NOTE: that the labels should be the same for both size (index and columns) of the matrix
+    rdm = pd.DataFrame(ma, columns=df.columns[:10], index=df.columns[10:])
 
     return rdm
 
@@ -701,10 +705,10 @@ def save_RSA_result(
     p_values = nib.Nifti1Image(p_values, mask.affine)
 
     # Create the results directory if it does not exist
-    if not os.path.exists(results_directory + '/results'):
-        os.makedirs(results_directory + '/results')
+    if not os.path.exists(results_directory + '/replay/results'):
+        os.makedirs(results_directory + '/replay/results')
 
     # save results to the correct directory of the brain 
-    nib.save(t_values, results_directory + '/results/t_values.nii.gz')  
-    nib.save(b_values, results_directory + '/results/b_values.nii.gz')
-    nib.save(p_values, results_directory + '/results/p_values.nii.gz')
+    nib.save(t_values, results_directory + '/replay/results/t_values.nii.gz')  
+    nib.save(b_values, results_directory + '/replay/results/b_values.nii.gz')
+    nib.save(p_values, results_directory + '/replay/results/p_values.nii.gz')
