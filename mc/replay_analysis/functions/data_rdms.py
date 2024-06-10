@@ -300,7 +300,6 @@ def sort_data_searchlight_dict(
 
 def get_data_rdms(
     data_searchlight: dict,
-    SIZE: str,  
 ) -> dict:
     """
     Calculate and return the data RDMS (Representational Dissimilarity Matrices) for each center.
@@ -334,7 +333,7 @@ def get_data_rdms(
 
         for center in data_searchlight:
             df = data_searchlight[center]
-            rdm = get_rdm_from_df(df, SIZE)
+            rdm = get_rdm_from_df(df)
 
             data_rdms_dict[center] = rdm
             pbar.update(1)
@@ -342,6 +341,90 @@ def get_data_rdms(
 
     return data_rdms_dict
 
+
+
+def get_data_rdms_nan_off_diag(
+    data_rdms_dict: dict,
+) -> dict:
+    """
+    Returns a dictionary of all the RDMS for each searchlight with the off diagonal values removed from the array. 
+    
+    Param
+    - data_rdms_dict: dict. A dictionary of the RDMS for each searchlight
+
+    Returns
+    - df_dict: dict. A dictionary of the RDMS for each searchlight with the off diagonal values removed
+    
+    """
+    # Function that gets the requried indicies
+
+    df_dict = {}
+    with tqdm(total=len(data_rdms_dict), desc='Removing off-diagonals') as pbar:
+        for center in data_rdms_dict:
+            df = data_rdms_dict[center]
+            mask = np.arange(df.shape[0])[:, None] // 2 != np.arange(df.shape[1]) // 2
+            df[mask] = np.nan
+            df_dict[center] = df
+            pbar.update(1)
+
+    return df_dict
+
+
+def get_data_rdms_vector_labels(
+    data_rdms_dict: pd.DataFrame,
+) -> np.array:
+    """
+    Get a 1D array of the coomparison labels for the data RDMS dataframe. 
+    This will be used to label the vector form of the RDM
+    """
+    # Get the first key in the dictionary
+    first_key = list(data_rdms_dict.keys())[0]
+    # Create a string array of the labels
+    labels = np.array([f"{i} vs {j}" for i in data_rdms_dict[first_key].columns for j in data_rdms_dict[first_key].columns])
+    labels = labels.reshape(data_rdms_dict[first_key].shape[0], data_rdms_dict[first_key].shape[1])
+    # 
+    labels = np.where(
+        np.repeat(np.arange(len(labels)//2), 2) == np.tile(np.arange(len(labels)//2), 2), 
+        labels,
+        None)
+    # # Remove the NaN values from the array
+    # labels = labels[~pd.isnull(labels)]
+    # # Convert to a 1D array
+    # labels = labels.ravel()
+    # Return the labels
+    return labels
+
+def get_data_rdms_vectors(
+    data_rdms_dict: dict,
+) -> dict:
+    """
+    Remove the NaN values from the rdm and return the resultant vector. The vector will be 1d. At this point the labels are lost
+    Consider adding the labels to the vector.
+    """
+
+    # Get the labels for the for the vector
+    
+    # Create a string array of the labels
+    labels = get_data_rdms_vector_labels(data_rdms_dict)
+    print(labels)
+    df_dict = {}
+    with tqdm(total=len(data_rdms_dict), desc='Converting to vector form') as pbar:
+        for center in data_rdms_dict:
+            # Get the data frame from the dictionary
+            df = data_rdms_dict[center]
+            # Convert the data frame to a numpy array and then to a 1D array
+            df = df.to_numpy().ravel()
+            # Remove the NaN values from the array
+            df = df[~np.isnan(df)]
+            # Add the array to the dictionary
+            df_dict[center] = pd.DataFrame(df,
+                                            columns=labels
+                                            )
+            # Update the progress bar
+            pbar.update(1)
+
+    # Return the dictionary of the searchlights
+    return df_dict  
 
 def dissimilarity_measure(
     v1: np.array, v2: np.array,
@@ -401,10 +484,9 @@ def dissimilarity_measure(
 #         return rdm
 
     
-def get_rdm_from_df(df: dict,
-                SIZE: str,
-                MEASURE: str = "pearson"
-                ) -> pd.DataFrame:
+def get_rdm_from_df(
+        df: dict,
+    ) -> pd.DataFrame:
     """
     Calculate the RDM from a DataFrame.
 
@@ -609,8 +691,8 @@ def evaluate_model(
     Y (data) = bX (model) + C
 
     Parameters
-        model: 
-        data
+        model (Y): 
+        data (X):
 
     Returns
         tvalues
@@ -619,22 +701,22 @@ def evaluate_model(
     """
 
 
+    # Unravel both the data and the model
+    Y = Y.to_numpy().ravel()
+    X = X.to_numpy().ravel()   
+    
+    # The shape of X and Y must be the same 
 
-    # X = X.reset_index(drop=True)
+
+    # Add a constant to the model
     X = sm.add_constant(X)
-    # print(X.shape, Y.shape)
 
-    # Replace NaN values with 0
+    # Convert NaN values to 0
     X = np.nan_to_num(X)
 
-    # remove any rows with NaN values 
-    nan_filter = np.isnan(X).any(axis=1)
-
-    X = X[~nan_filter]
-    Y = Y[~nan_filter]
-
-    est = sm.OLS(Y, X)
-    est = est.fit()
+    # fit the model
+    model = sm.OLS(Y, X)
+    est   = model.fit()
     
     # return the tvalues, betas and pvalues
     return est.tvalues[1:], est.params[1:], est.pvalues[1:]
@@ -643,7 +725,7 @@ def evaluate_model(
 def evaluate_model_parallel(
     data_rdms_tri,
     model_rdms_dict_tri,
-    MODEL_TYPE = "replay"
+    MODEL_TYPE
 ):
     
     
@@ -663,7 +745,8 @@ def save_RSA_result(
     results_file,
     data_rdms_tri,
     mask,         
-    results_directory
+    results_directory,
+    RDM_VERSION 
     ):
     """
     Saves the results estimates list into the correct maps of the brain
@@ -705,10 +788,10 @@ def save_RSA_result(
     p_values = nib.Nifti1Image(p_values, mask.affine)
 
     # Create the results directory if it does not exist
-    if not os.path.exists(results_directory + '/replay/results'):
-        os.makedirs(results_directory + '/replay/results')
+    if not os.path.exists(results_directory + F'analysis/{RDM_VERSION}/results'):
+        os.makedirs(results_directory + F'analysis/{RDM_VERSION}/results')
 
     # save results to the correct directory of the brain 
-    nib.save(t_values, results_directory + '/replay/results/t_values.nii.gz')  
-    nib.save(b_values, results_directory + '/replay/results/b_values.nii.gz')
-    nib.save(p_values, results_directory + '/replay/results/p_values.nii.gz')
+    nib.save(t_values, results_directory + F'analysis/{RDM_VERSION}/results/t_values.nii.gz')  
+    nib.save(b_values, results_directory + F'analysis/{RDM_VERSION}/results/b_values.nii.gz')
+    nib.save(p_values, results_directory + F'analysis/{RDM_VERSION}/results/p_values.nii.gz')

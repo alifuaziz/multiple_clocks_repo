@@ -4,125 +4,109 @@ Alif's Functions for RSA
 # # Standard Libraries
 import numpy as np
 import pandas as pd
-# import os
-# import matplotlib.pyplot as plt
-# import pickle
-# import sys
-# from pathlib import Path
-
-# # 
-# import nibabel as nib 
-
-# # RSA specific libraries
-# from rsatoolbox.rdm import RDMs as RDMs_object
-
-# # Multiple Clocks Repositiory
-# import mc
-# import mc.analyse.analyse_MRI_behav     as analyse_MRI_behav
-# import mc.analyse.extract_and_clean     as extract_and_clean
-# import mc.simulation.predictions        as predictions
-# import mc.simulation.RDMs               as RDMs
-# import mc.replay_analysis.functions.utils      as utils
-# import mc.replay_analysis.functions.visualise  as v
-# import mc.replay_analysis.functions.model_rdms as model_rdms
-# import mc.replay_analysis.functions.data_rdms  as data_rdms
-
-
-# from tqdm import tqdm
-# import numpy as np
-# import nibabel as nib
-# import os
-# import rsatoolbox.rdm as rsr
-# import rsatoolbox
-# from rsatoolbox.util.searchlight import get_volume_searchlight, get_searchlight_RDMs
-# from nilearn.image import load_img
-# from joblib import Parallel, delayed
-# import matplotlib.pyplot as plt
-# import mc
-# import pickle
-# import sys
-# import random
-
+NaN = np.nan
 import mc.replay_analysis.functions.data_rdms as data_rdms
 
 
 
-def create_model_rdm(conditions, SIZE='cross_corr'):
-        # Create the model RDM for this execution order
-    rdm_df = pd.DataFrame(0, index=conditions, columns=conditions)
+def create_model_rdm(conditions, TYPE='replay'):
+    """
+    Create a different model RDM that is based on a different hypothesis
 
-    # # For first condition
-    # for EV1_idx, EV1 in enumerate(rdm_df):
-    #     # for second condition
-    #     for EV2_idx, EV2 in enumerate(rdm_df):
-    #         # compare the conditions
-    #         if EV1[0] == EV2[0]: #(A, B, C, D, E) (A == A)
-    #             # the set of rewards are the same
+    Parameters
+        TYPE: str
+        TYPEs are 
+        - replay
+        - replay_zero_off_diag
+        - replay_nan_off_diag
 
-    #             if EV1[1] == EV2[1]: # Task half (1 or 2) (A1 == A1)
-    #                 # Forwards v.s. backwards
+    Returns
+        rdm_df: pd.DataFrame
 
-    #                 if EV1[3] == EV2[3]: # Forwards v.s. backwards 
-    #                     # 
-    #                     pass
 
-    #                 else:
-    #                     pass
-            
-    #             else :# (A1, A2)
-    #                 if EV1[3] == EV2[3]: #(A1F, A2F)
-    #                     rdm_df.iloc[EV1_idx, EV2_idx] = -1
-    #                 else: # (A1F, A2B)
-    #                     rdm_df.iloc[EV1_idx, EV2_idx] = +1
-    #         else: #(A, B)
+    """
 
-    #             if EV1[1] == EV2[1]: # A
+    if TYPE == 'replay':
 
-    #                 if EV1[3] == EV2[3]: # (A1F, B1F)
-    #                     rdm_df.iloc[EV1_idx, EV2_idx] = +1/4
-                    
-    #                 else: # (A1F, B1B)
-    #                     rdm_df.iloc[EV1_idx, EV2_idx] = -1/4
+        rdm = np.array(
+            [[-1,   +1,   +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4],
+             [+1,   -1,   -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4],
+             [+1/4, -1/4,   -1,   +1, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4],
+             [-1/4, +1/4,   +1,   -1, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4],
+             [+1/4, -1/4, +1/4, -1/4,   -1,   +1, +1/4, -1/4, +1/4, -1/4],
+             [-1/4, +1/4, -1/4, +1/4,   +1,   -1, -1/4, +1/4, -1/4, +1/4],
+             [+1/4, -1/4, +1/4, -1/4, +1/4, -1/4,   -1,   +1, +1/4, -1/4],
+             [-1/4, +1/4, -1/4, +1/4, -1/4, +1/4,   +1,   -1, -1/4, +1/4],
+             [+1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4,   -1,   +1],
+             [-1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4,   +1,   -1]]
+        )
 
-    #             else:
-    #                 pass
 
-    rdm = np.array(
-        [[-1,     +1, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4],
-         [+1,     -1, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4],
-         [-1/4, +1/4,   -1,   +1, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4],
-         [+1/4, -1/4,   +1,   -1, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4],
-         [-1/4, +1/4, -1/4, +1/4,   -1,   +1, +1/4, -1/4, +1/4, -1/4],
-         [+1/4, -1/4, +1/4, -1/4,   +1,   -1, -1/4, +1/4, -1/4, +1/4],
-         [-1/4, +1/4, -1/4, +1/4, -1/4, +1/4,   -1,   +1, +1/4, -1/4],
-         [+1/4, -1/4, +1/4, -1/4, +1/4, -1/4,   +1,   -1, -1/4, +1/4],
-         [-1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4,   -1,   +1],
-         [+1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4,   +1,   -1]]
-    )
+    elif TYPE == 'replay_zero_off_diag':
+        # Create a model RDM where the diagagnoal conditions are present, 
+        # Everything off diagonal are zeros. This hypothesises that the other conditions are not correlated
+        
+        rdm = np.array(
+            [[-1, +1,  0,  0,  0,  0,  0,  0,  0,   0],
+             [+1, -1,  0,  0,  0,  0,  0,  0,  0,   0],
+             [ 0,  0, -1, +1,  0,  0,  0,  0,  0,   0],
+             [ 0,  0, +1, -1,  0,  0,  0,  0,  0,   0],
+             [ 0,  0,  0,  0, -1, +1,  0,  0,  0,   0],
+             [ 0,  0,  0,  0, +1, -1,  0,  0,  0,   0],
+             [ 0,  0,  0,  0,  0,  0, +1,  -1, 0,   0],
+             [ 0,  0,  0,  0,  0,  0, -1,  +1, 0,   0],
+             [ 0,  0,  0,  0,  0,  0,  0,   0, -1, +1],
+             [ 0,  0,  0,  0,  0,  0,  0,   0, +1, -1]]
+        )
+
+        
+    elif TYPE == 'replay_nan_off_diag':
+        # Create a model RDM where the diagagnoal conditions are present, 
+        # Everything off diagonal are NaNs. This makes no assumptions about the correlations between the other pattern conditions
+        rdm = np.array(
+            [[-1,    +1,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,   NaN],
+             [+1,    -1,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,   NaN],
+             [ NaN, NaN,   -1,   +1,  NaN,  NaN,  NaN,  NaN,  NaN,   NaN],
+             [ NaN, NaN,   +1,   -1,  NaN,  NaN,  NaN,  NaN,  NaN,   NaN],
+             [ NaN, NaN,  NaN,  NaN,   -1,   +1,  NaN,  NaN,  NaN,   NaN],
+             [ NaN, NaN,  NaN,  NaN,   +1,   -1,  NaN,  NaN,  NaN,   NaN],
+             [ NaN, NaN,  NaN,  NaN,  NaN,  NaN,   -1,   +1,  NaN,   NaN],
+             [ NaN, NaN,  NaN,  NaN,  NaN,  NaN,   +1,   -1,  NaN,   NaN],
+             [ NaN, NaN,  NaN,  NaN,  NaN,  NaN,  NaN,   NaN,   -1,   +1],
+             [ NaN, NaN,  NaN,  NaN,  NaN,  NaN,  NaN,   NaN,   +1,   -1]]
+        )
+
+    elif TYPE == 'difficulty':
+                
+        rdm = np.array(
+            [[+1/4, -1/4,   +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4],
+             [-1/4, +1/4,   -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4],
+             [+1/4, -1/4,  +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4],
+             [-1/4, +1/4,  -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4],
+             [+1/4, -1/4, +1/4, -1/4,  +1/4, -1/4, +1/4, -1/4, +1/4, -1/4],
+             [-1/4, +1/4, -1/4, +1/4,  -1/4, +1/4, -1/4, +1/4, -1/4, +1/4],
+             [+1/4, -1/4, +1/4, -1/4, +1/4, -1/4,   +1/4, -1/4, +1/4, -1/4],
+             [-1/4, +1/4, -1/4, +1/4, -1/4, +1/4,   -1/4, +1/4, -1/4, +1/4],
+             [+1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4,  +1/4, -1/4,],
+             [-1/4, +1/4, -1/4, +1/4, -1/4, +1/4, -1/4, +1/4,  -1/4, +1/4,]]
+        )
 
     rdm_df = pd.DataFrame(rdm, index=conditions[:10], columns=conditions[10:])
-
-    # rdm_df = data_rdms.sort_data_searchlight(rdm_df, conditions_type = 'two_halves')
-
-
-    if SIZE == 'cross_corr':
-        # Return only the betwen halves comparison of the RDM 
-        return rdm_df
-    # else:
-    #     # return the whole dataframe
-    #     return rdm_df
+    return rdm_df
 
 def get_model_rdms(
         conditions: list,
         TYPE: str =  'replay',
-        SIZE: str = 'cross_corr'
-):
-
-    models_rdms_dict = {
-        'replay': create_model_rdm(conditions, SIZE),
-    }
-
-    return models_rdms_dict
+) -> dict:
+    """
+    Returns a dictionary of model RDMs for the replay analysis.
+    """
+    # Create the dictionary
+    model_rdms_dict = {}
+    # Create the model RDM for the replay analysis and store it in the dictionary
+    model_rdms_dict[TYPE] = create_model_rdm(conditions, TYPE)
+    # Return the dictionary
+    return model_rdms_dict
 
 
 

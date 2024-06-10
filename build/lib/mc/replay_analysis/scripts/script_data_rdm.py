@@ -195,7 +195,6 @@ def replay_analysis(**analysis_options):
 
     data_rdms_dict = data_rdms.get_data_rdms(
         data_searchlight = data_searchlight,
-        SIZE = RDM_SIZE
         )
 
     #%% Save the data RDMs to a pickle file
@@ -221,9 +220,9 @@ def replay_analysis(**analysis_options):
 
 
     #%% Convert the Data RDMs to upper triangle vectors for RSA 
-    data_rdms_tri = data_rdms.get_data_rdms_tri(
-        data_rdms_dict = data_rdms_dict
-        )
+    # data_rdms_tri = data_rdms.get_data_rdms_tri(
+    #     data_rdms_dict = data_rdms_dict
+    #     )
 
 
     #%% Load the model RDMs for the replay model
@@ -236,9 +235,9 @@ def replay_analysis(**analysis_options):
         )
 
     # Convert the model RDMs to upper triangle vectors for RSA
-    model_rdms_dict_tri = data_rdms.get_data_rdms_tri(
-        model_rdms_dict
-        )
+    # model_rdms_dict_tri = data_rdms.get_data_rdms_tri(
+    #     model_rdms_dict
+    #     )
 
     #%% Evalute the correlation between the model and data RDMs
 

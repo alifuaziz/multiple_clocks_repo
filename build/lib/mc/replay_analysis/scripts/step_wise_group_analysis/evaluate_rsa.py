@@ -23,9 +23,9 @@ def main(
 
 
     # convert to triangle vectors for RSA
-    data_rdms_tri = data_rdms.get_data_rdms_tri(
-        data_rdms_dict = data_rdms_dict
-    )
+    # data_rdms_tri = data_rdms.get_data_rdms_tri(
+    #     data_rdms_dict = data_rdms_dict
+    # )
 
     # with open(f"{SUBJECT_DIRECTORY}/searchlight_data_rdms_tri.pkl", 'rb') as f:
     #     data_rdms_tri = pickle.load(f)
@@ -41,9 +41,9 @@ def main(
     SIZE = 'cross_corr')
 
 
-    model_rdms_dict_tri = data_rdms.get_data_rdms_tri(
-        data_rdms_dict = model_rdms_dict
-        )
+    # model_rdms_dict_tri = data_rdms.get_data_rdms_tri(
+    #     data_rdms_dict = model_rdms_dict
+    #     )
 
 
     eval_result = []
