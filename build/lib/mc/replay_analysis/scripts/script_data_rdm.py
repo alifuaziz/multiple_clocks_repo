@@ -195,6 +195,7 @@ def replay_analysis(**analysis_options):
 
     data_rdms_dict = data_rdms.get_data_rdms(
         data_searchlight = data_searchlight,
+        SIZE = RDM_SIZE
         )
 
     #%% Save the data RDMs to a pickle file

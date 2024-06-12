@@ -2,8 +2,8 @@ import pickle
 import pandas as pd
 from tqdm import tqdm
 
-from mc.replay_analysis.functions import data_rdms
-from mc.replay_analysis.functions import model_rdms
+import mc.replay_analysis.functions.data_rdms as data_rdms
+import mc.replay_analysis.functions.model_rdms as model_rdms
 
 from joblib import Parallel, delayed
 from nilearn.image import load_img
@@ -36,18 +36,31 @@ def main(
     )
 
     if RDM_VERSION == 'replay_nan_off_diag':
-        # Set all the off diagonals elements to NaNs
-        data_rdms_dict = data_rdms.get_data_rdms_nan_off_diag(
-            data_rdms_dict = data_rdms_dict
-        )
+        # # Set all the off diagonals elements to NaNs
+        # data_rdms_dict = data_rdms.get_data_rdms_nan_off_diag(
+        #     data_rdms_dict = data_rdms_dict
+        # )
+        
+        # # save the data_rdms_dict for future use
+        # with open(f"{SUBJECT_DIRECTORY}/analysis/{RDM_VERSION}/preprocessing/searchlight_data_rdms_nan_off_diag.pkl", 'wb') as f:
+        #     pickle.dump(data_rdms_dict, f)
+
+        # Load the data_rdms_dict for future use
+        with open(f"{SUBJECT_DIRECTORY}/analysis/{RDM_VERSION}/preprocessing/searchlight_data_rdms_nan_off_diag.pkl", 'rb') as f:
+            data_rdms_dict = pickle.load(f)
+
 
         # Convert the data rdm to vectors for evaluation
         data_rdms_dict = data_rdms.get_data_rdms_vectors(
             data_rdms_dict = data_rdms_dict
         )
 
-        model_rdms_dict = model_rdms.get_model_rdms_nan_off_diag(
-            model_rdms_dict = model_rdms_dict
+        model_rdms_dict = data_rdms.get_data_rdms_nan_off_diag(
+            data_rdms_dict = model_rdms_dict
+        )
+
+        model_rdms_dict = data_rdms.get_data_rdms_vectors(
+            data_rdms_dict = model_rdms_dict
         )
 
     # with open(f"{SUBJECT_DIRECTORY}/searchlight_data_rdms_tri.pkl", 'rb') as f:
@@ -71,6 +84,7 @@ def main(
             )
         )
 
+    # Used to get the metadata from the nii.gz file
     mask = load_img(f"{SUBJECT_DIRECTORY}/anat/{SUB}_T1w_noCSF_brain_mask_bin_func_01.nii.gz")
 
     data_rdms.save_RSA_result(
