@@ -398,26 +398,34 @@ def get_data_rdms_vectors(
     data_rdms_dict: dict,
 ) -> dict:
     """
-    Remove the NaN values from the rdm and return the resultant vector. The vector will be 1d. At this point the labels are lost
+    Remove the NaN values from the rdm and return the resultant matrix as a vector. The vector will be 1d. At this point the labels are lost
     Consider adding the labels to the vector.
     """
 
+    # Get first key from the dictionary
+    first_key = list(data_rdms_dict.keys())[0]
+    # Create a mask of the values that i want to remove. Values that are True will be removed
+    mask = np.arange(data_rdms_dict[first_key].shape[0])[:, None] // 2 != np.arange(data_rdms_dict[first_key].shape[1]) // 2
+    # Convert the mask to a 1D array
+    mask = mask.ravel()
+
+
     # Get the labels for the for the vector
-    
     # Create a string array of the labels
-    labels = get_data_rdms_vector_labels(data_rdms_dict)
-    print(labels)
+    # labels = get_data_rdms_vector_labels(data_rdms_dict)
+    # print(labels)
+
     df_dict = {}
     with tqdm(total=len(data_rdms_dict), desc='Converting to vector form') as pbar:
-        for center in data_rdms_dict:
+        for searchlight in data_rdms_dict:
             # Get the data frame from the dictionary
-            df = data_rdms_dict[center]
+            df = data_rdms_dict[searchlight]
             # Convert the data frame to a numpy array and then to a 1D array
             df = df.to_numpy().ravel()
-            # Remove the NaN values from the array
-            df = df[~np.isnan(df)]
+            # Remove the True values from the mask array from the df
+            df = df[~mask]
             # Add the array to the dictionary
-            df_dict[center] = pd.DataFrame(df,
+            df_dict[searchlight] = pd.DataFrame(df,
                                             # columns=labels
                                             )
             # Update the progress bar
@@ -701,18 +709,18 @@ def evaluate_model(
     """
 
 
-    # Unravel both the data and the model
+    # Unravel both the data and the model to a 1D array
+    # The shape of X and Y must be the same 
     Y = Y.to_numpy().ravel()
     X = X.to_numpy().ravel()   
-    
-    # The shape of X and Y must be the same 
-
-
-    # Add a constant to the model
-    X = sm.add_constant(X)
 
     # Convert NaN values to 0
     X = np.nan_to_num(X)
+    # Y = np.nan_to_num(Y)
+
+    # Add a constant to the model
+    X = sm.add_constant(X)
+    # Y = sm.add_constant(Y)
 
     # fit the model
     model = sm.OLS(Y, X)
@@ -759,7 +767,7 @@ def save_RSA_result(
     Returns
     - None
     """
-    assert len(results_file) == len(data_rdms_tri.columns), "The number of results must be the same as the number of searchlights"
+    assert len(results_file) == len(data_rdms_tri.keys()), f"The number of results ({len(results_file)}) must be the same as the number of searchlights ({len(data_rdms_tri.keys())}). "
 
 
 
@@ -771,7 +779,7 @@ def save_RSA_result(
     b_values = np.zeros([x * y * z])
     p_values = np.zeros([x * y * z])
     # for each value in the data_rdms_tri.columns we have the tvalues, betas and pvalues in the eval_result list, inorder
-    for idx, centers in enumerate(data_rdms_tri.columns):
+    for idx, centers in enumerate(data_rdms_tri.keys()):
         # Unpack each value from the 3 x 1 tuple list and store them in the 1D arrays of the same size as the brain 
         t_values[centers] = results_file[idx][0]
         b_values[centers] = results_file[idx][1]
