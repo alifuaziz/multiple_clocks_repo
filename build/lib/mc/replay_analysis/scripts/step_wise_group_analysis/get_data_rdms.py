@@ -11,17 +11,16 @@ def main(
 ):
     # unpack kwargs
     SUBJECT_DIRECTORY   = kwargs['META_DATA'].get('SUBJECT_DIRECTORY')
-
+    RDM_VERSION         = kwargs['META_DATA'].get('RDM_VERSION')
 
     # load data_searchlight from a pickle file
-    with open(f"{SUBJECT_DIRECTORY}/data_searchlight_df.pkl", 'rb') as f:
+    with open(f"{SUBJECT_DIRECTORY}/analysis/preprocessing/data_searchlight_df.pkl", 'rb') as f:
         data_searchlight = pickle.load(f)
 
     # main function that will be called
 
     data_rdms_dict = data_rdms.get_data_rdms(
     data_searchlight = data_searchlight,
-    SIZE = 'cross_corr'
     )
 
     # # convert to triangle vectors for RSA
@@ -31,10 +30,10 @@ def main(
 
 
     # save
-    with open(f"{SUBJECT_DIRECTORY}/searchlight_data_rdms.pkl", 'wb') as f:
+    with open(f"{SUBJECT_DIRECTORY}/analysis/{RDM_VERSION}/preprocessing/searchlight_data_rdms.pkl", 'wb') as f:
         pickle.dump(data_rdms_dict, f)
 
-    # with open(f"{SUBJECT_DIRECTORY}/searchlight_data_rdms_tri.pkl", 'wb') as f:
+    # with open(f"{SUBJECT_DIRECTORY}/analysis/{RDM_VERSION}/preprocessing/searchlight_data_rdms_tri.pkl", 'wb') as f:
     #     pickle.dump(data_rdms_tri, f)
 
 

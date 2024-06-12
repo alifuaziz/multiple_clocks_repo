@@ -14,7 +14,7 @@ def main(
     RDM_VERSION         = kwargs['META_DATA'].get('RDM_VERSION')
 
     # load data_searchlight from a pickle file
-    with open(f"{SUBJECT_DIRECTORY}/analysis/data_searchlight_df.pkl", 'rb') as f:
+    with open(f"{SUBJECT_DIRECTORY}/analysis/preprocessing/data_searchlight_df.pkl", 'rb') as f:
         data_searchlight = pickle.load(f)
 
     # main function that will be called

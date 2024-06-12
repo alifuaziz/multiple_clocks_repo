@@ -1,7 +1,7 @@
 # !/bin/bash
 # # Set scratch directory for execution on server
 scratchDir="/vols/Scratch/chx061/data"
-
+scratchDir="/home/fs0/psy"
 # Get a list of all the directories in the derivatives directory
 derivativesDir=${scratchDir}/derivatives
 

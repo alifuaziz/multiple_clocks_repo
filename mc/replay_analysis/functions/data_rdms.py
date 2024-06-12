@@ -418,7 +418,7 @@ def get_data_rdms_vectors(
             df = df[~np.isnan(df)]
             # Add the array to the dictionary
             df_dict[center] = pd.DataFrame(df,
-                                            columns=labels
+                                            # columns=labels
                                             )
             # Update the progress bar
             pbar.update(1)
