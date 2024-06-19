@@ -106,7 +106,6 @@ def replay_analysis(**analysis_options):
     # Load in the EVs for the instruction periods from the dictionary of paths
     EVs_data_dict = data_rdms.load_EV_data(
         EVs_path_dict = EVs_path_dict,
-        RDM_VERSION = RDM_VERSION
     )
 
     # Unravel the values of each EV

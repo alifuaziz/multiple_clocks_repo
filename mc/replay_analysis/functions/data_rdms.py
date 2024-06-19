@@ -14,8 +14,8 @@ from scipy.spatial.distance import pdist, squareform
 
 def get_EV_path_dict(
         subject_directory: str,
-        EVs_type:str = "instruction_period"
-        
+        EVs_type:str = "instruction_period",
+        **kwargs
     ) -> dict:
     """
     Function that returns the correct dictionary of EV paths that will be used to load in the correct dataset.
@@ -28,11 +28,16 @@ def get_EV_path_dict(
 
     Returns
         EVs_path_dict: dict
-
     """
+    # Unpack the TR from the dictionary
+    TR = kwargs['TR'] if 'TR' in kwargs else None
+
     if EVs_type == "instruction_period":
         # Get the path to the EVs for the instruction period
         EVs_path_dict = get_EV_path_dict_instruction_period(subject_directory)
+    elif EVs_type == "instruction_period_sliding_window":
+        # Get the path to the EVs for the instruction period
+        EVs_path_dict = get_EV_path_dict_instruction_period_sliding_window(subject_directory, TR)
     else:
         raise ValueError(f"EVs_type {EVs_type} not found. Please use 'instruction_period'")
 
@@ -80,10 +85,36 @@ def get_EV_path_dict_instruction_period(subject_directory: str) -> dict:
 
     return EVs_path_dict
 
+def get_EV_path_dict_instruction_period_sliding_window(subject_directory: str, TR: int) -> dict:
+    """
+    Param
+        subject_directory: str of the subject directory
+        TR: int of the TR of the data
+    
+    Returns a dictionary with the paths to the EVs for the sliding window instruction period
+    """
+    EVs_path_dict = {}
+    # pe_path is the path to of the instruction period for each of the task 
+    split = 1
+    pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
+
+    with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
+        for line in file:
+            index, name = line.strip().split(' ', 1)
+            EVs_path_dict[f"{name}_EV_{index}"] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
+
+    split = 2
+    pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
+
+    with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
+            for line in file:
+                index, name = line.strip().split(' ', 1)
+                EVs_path_dict[f"{name}_EV_{index}"] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
+
+    return EVs_path_dict
 
 
-
-def load_EV_data(EVs_path_dict: dict, RDM_VERSION) -> dict:
+def load_EV_data(EVs_path_dict: dict) -> dict:
     """
     Read in dictionary of paths to EVs and load them as numpy arrays into a dictionary
     """
@@ -796,10 +827,10 @@ def save_RSA_result(
     p_values = nib.Nifti1Image(p_values, mask.affine)
 
     # Create the results directory if it does not exist
-    if not os.path.exists(results_directory + F'analysis/{RDM_VERSION}/results'):
-        os.makedirs(results_directory + F'analysis/{RDM_VERSION}/results')
+    if not os.path.exists(results_directory):
+        os.makedirs(results_directory)
 
     # save results to the correct directory of the brain 
-    nib.save(t_values, results_directory + F'analysis/{RDM_VERSION}/results/t_values.nii.gz')  
-    nib.save(b_values, results_directory + F'analysis/{RDM_VERSION}/results/b_values.nii.gz')
-    nib.save(p_values, results_directory + F'analysis/{RDM_VERSION}/results/p_values.nii.gz')
+    nib.save(t_values, results_directory + '/t_values.nii.gz')  
+    nib.save(b_values, results_directory + '/b_values.nii.gz')
+    nib.save(p_values, results_directory + '/p_values.nii.gz')
