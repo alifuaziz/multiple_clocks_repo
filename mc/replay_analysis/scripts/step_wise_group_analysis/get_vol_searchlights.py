@@ -13,12 +13,10 @@ def main(
     SUB                 = kwargs['META_DATA'].get('SUB')
     EVS_TYPE            = kwargs['META_DATA'].get('EVS_TYPE')
     RDM_VERSION         = kwargs['META_DATA'].get('RDM_VERSION')
-    TR                  = kwargs['META_DATA'].get('TR', None)
+    TR                  = kwargs['META_DATA'].get('TR')
 
 
     # Load the EVs data
-
-
 
     # Create dictionary to store the data for each EV for both task halves
     # Convert the output of this to be pandas arrays
@@ -65,11 +63,9 @@ def main(
 
     conditions = data_rdms.get_standard_order()
     # reorder the columns 
-    EVs_data_dict.loc[:, conditions]
-
+    EVs_data_dict = EVs_data_dict[conditions]
 
     # %%
-
 
     mask = load_img(f"{SUBJECT_DIRECTORY}/anat/{SUB}_T1w_noCSF_brain_mask_bin_func_01.nii.gz")
     # print(mask.shape)
@@ -100,22 +96,19 @@ def main(
         vol_searchlight = vol_searchlight,
         EVs_data_dict = EVs_data_dict,
     )
-
+        
 
     if TR is not None:
-        # Save the vol_searchlight to a pickle file
-        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{str(TR)}/preprocessing/vol_searchlight_df.pkl", 'wb') as f:
-            pickle.dump(vol_searchlight, f)
-
-        # Save the data_searchlight to a pickle file
-        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{str(TR)}/preprocessing/data_searchlight_df.pkl", 'wb') as f:
-            pickle.dump(data_searchlight, f)
+        vol_searchlight_dir = f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{str(TR)}/preprocessing/vol_searchlight_df.pkl"
+        data_searchlight_dir = f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{str(TR)}/preprocessing/data_searchlight_df.pkl"
     else:
-        # Save the vol_searchlight to a pickle file
-        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/vol_searchlight_df.pkl", 'wb') as f:
-            pickle.dump(vol_searchlight, f)
+        vol_searchlight_dir = f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/vol_searchlight_df.pkl"
+        data_searchlight_dir = f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/data_searchlight_df.pkl"
 
-        # Save the data_searchlight to a pickle file
-        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/data_searchlight_df.pkl", 'wb') as f:
-            pickle.dump(data_searchlight, f)
-        
+    # Save the vol_searchlight to a pickle file
+    with open(vol_searchlight_dir, 'wb') as f:
+        pickle.dump(vol_searchlight, f)
+
+    # Save the data_searchlight to a pickle file
+    with open(data_searchlight_dir, 'wb') as f:
+        pickle.dump(data_searchlight, f)
