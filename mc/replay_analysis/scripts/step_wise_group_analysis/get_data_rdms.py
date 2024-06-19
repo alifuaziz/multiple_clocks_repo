@@ -12,10 +12,23 @@ def main(
     # unpack kwargs
     SUBJECT_DIRECTORY   = kwargs['META_DATA'].get('SUBJECT_DIRECTORY')
     RDM_VERSION         = kwargs['META_DATA'].get('RDM_VERSION')
+    EVS_TYPE            = kwargs['META_DATA'].get('EVS_TYPE')
+    TR                  = kwargs['META_DATA'].get('TR', None)
 
     # load data_searchlight from a pickle file
-    with open(f"{SUBJECT_DIRECTORY}/analysis/preprocessing/data_searchlight_df.pkl", 'rb') as f:
-        data_searchlight = pickle.load(f)
+    if TR is not None:
+        # Load the data_searchlight from the correct TR directory
+        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{TR}/preprocessing/data_searchlight_df.pkl", 'rb') as f:
+            data_searchlight = pickle.load(f)
+
+    else:
+        # Load the data_searchlight correct directory
+        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/data_searchlight_df.pkl", 'rb') as f:
+            data_searchlight = pickle.load(f)
+
+
+        pass        
+
 
     # main function that will be called
 
@@ -28,10 +41,14 @@ def main(
     #     data_rdms_dict = data_rdms_dict
     # )
 
+    if TR is not None:
+        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{TR}/preprocessing/searchlight_data_rdms.pkl", 'wb') as f:
+            pickle.dump(data_rdms_dict, f)
 
-    # save
-    with open(f"{SUBJECT_DIRECTORY}/analysis/{RDM_VERSION}/preprocessing/searchlight_data_rdms.pkl", 'wb') as f:
-        pickle.dump(data_rdms_dict, f)
+    else:
+            
+        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/searchlight_data_rdms.pkl", 'wb') as f:
+            pickle.dump(data_rdms_dict, f)
 
     # with open(f"{SUBJECT_DIRECTORY}/analysis/{RDM_VERSION}/preprocessing/searchlight_data_rdms_tri.pkl", 'wb') as f:
     #     pickle.dump(data_rdms_tri, f)

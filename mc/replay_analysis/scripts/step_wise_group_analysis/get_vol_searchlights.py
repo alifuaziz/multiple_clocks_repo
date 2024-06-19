@@ -13,6 +13,7 @@ def main(
     SUB                 = kwargs['META_DATA'].get('SUB')
     EVS_TYPE            = kwargs['META_DATA'].get('EVS_TYPE')
     RDM_VERSION         = kwargs['META_DATA'].get('RDM_VERSION')
+    TR                  = kwargs['META_DATA'].get('TR', None)
 
 
     # Load the EVs data
@@ -29,16 +30,23 @@ def main(
     # create new dictionary to store the 2D array of EVs for both task halves
     EVs_both_halves_2d = EVs_both_halves_dict.copy()
 
+    if EVS_TYPE == 'instruction_period_sliding_window':
+        # Get the paths to the EVs for the instruction periods
+        EVs_path_dict = data_rdms.get_EV_path_dict(
+            subject_directory = SUBJECT_DIRECTORY,
+            EVs_type = EVS_TYPE,
+            TR = TR
+        )
+    else:
         
-    EVs_path_dict = data_rdms.get_EV_path_dict(
-        subject_directory = SUBJECT_DIRECTORY,
-        EVs_type = EVS_TYPE
+        EVs_path_dict = data_rdms.get_EV_path_dict(
+            subject_directory = SUBJECT_DIRECTORY,
+            EVs_type = EVS_TYPE
         )
 
     # Load in the EVs for the instruction periods from the dictionary of paths
     EVs_data_dict = data_rdms.load_EV_data(
         EVs_path_dict = EVs_path_dict,
-        RDM_VERSION = RDM_VERSION
     )
 
     # Unravel the values of each EV
@@ -93,11 +101,21 @@ def main(
         EVs_data_dict = EVs_data_dict,
     )
 
-    # Save the vol_searchlight to a pickle file
-    with open(f"{SUBJECT_DIRECTORY}/analysis/{RDM_VERSION}/preprocessing/vol_searchlight_df.pkl", 'wb') as f:
-        pickle.dump(vol_searchlight, f)
 
-    # Save the data_searchlight to a pickle file
-    with open(f"{SUBJECT_DIRECTORY}/analysis/{RDM_VERSION}/preprocessing/data_searchlight_df.pkl", 'wb') as f:
-        pickle.dump(data_searchlight, f)
+    if TR is not None:
+        # Save the vol_searchlight to a pickle file
+        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{str(TR)}/preprocessing/vol_searchlight_df.pkl", 'wb') as f:
+            pickle.dump(vol_searchlight, f)
+
+        # Save the data_searchlight to a pickle file
+        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{str(TR)}/preprocessing/data_searchlight_df.pkl", 'wb') as f:
+            pickle.dump(data_searchlight, f)
+    else:
+        # Save the vol_searchlight to a pickle file
+        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/vol_searchlight_df.pkl", 'wb') as f:
+            pickle.dump(vol_searchlight, f)
+
+        # Save the data_searchlight to a pickle file
+        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/data_searchlight_df.pkl", 'wb') as f:
+            pickle.dump(data_searchlight, f)
         
