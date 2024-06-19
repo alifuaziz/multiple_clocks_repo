@@ -1,7 +1,7 @@
 # !/bin/bash
 # # Set scratch directory for execution on server
 scratchDir="/vols/Scratch/chx061/data"
-scratchDir="/home/fs0/psy"
+# scratchDir="/home/fs0/psy"
 # Get a list of all the directories in the derivatives directory
 derivativesDir=${scratchDir}/derivatives
 
@@ -11,6 +11,18 @@ list_of_subjects=$(ls $derivativesDir | grep -v group)
 # Loop through each subject
 for subject in $list_of_subjects; do
     echo $subject
+
+    # # Move the everything in the analysis folder to a new folder of the name of the EVS_TYPE (i.e. instruction_period)
+    # # Create the new directory
+    # instruction_periodDir=${scratchDir}/derivatives/${subject}/analysis/instruction_period
+    # if [ ! -d $instruction_periodDir ]; then
+    #     mkdir $instruction_periodDir
+    # fi
+
+    # # Recursively move all the files in the analysis directory to the instruction_period directory
+    # mv ${scratchDir}/derivatives/${subject}/analysis/* ${instruction_periodDir}
+
+
     # analysisDir=${scratchDir}/derivatives/${subject}/analysis
     # if [ ! -d $analysisDir ]; then
     #     mkdir $analysisDir

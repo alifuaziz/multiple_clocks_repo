@@ -11,19 +11,22 @@ module load fsl
 # Set scratch directory for execution on server
 scratchDir="/home/fs0/chx061/scratch/data"
 
-analysisType="replay"
+# analysisType="replay"
+# analysisType="difficulty"
+analysisType="replay_nan_off_diag"
+# analysisType="replay_zero_off_diag"
 
 
 echo Now transforming results from replay analysis to standard space
 
 # MISSING 21 because this hasnt been processed yet
-for subjectTag in 02; do
-# for subjectTag in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 27 28 29 30 31 32 33 34 35; do
+# for subjectTag in 02; do
+for subjectTag in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 27 28 29 30 31 32 33 34 35; do
     # Get the directory of the results
-    resultDir=${scratchDir}/derivatives/sub-${subjectTag}/analysis/replay/results
+    resultDir=${scratchDir}/derivatives/sub-${subjectTag}/analysis/${analysisType}/results
 
     # Get the standard space directory
-    stdDir=${scratchDir}/derivatives/sub-${subjectTag}/analysis/replay/results-standard-space
+    stdDir=${scratchDir}/derivatives/sub-${subjectTag}/analysis/${analysisType}/results-standard-space
 
     # if the direcotry exists, delete all files in it
     if [ -d $stdDir ]; then

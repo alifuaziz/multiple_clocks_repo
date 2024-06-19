@@ -6,6 +6,9 @@ scratchDir="/vols/Scratch/chx061/data"
 # 
 glm_version="instruction_period"
 RSA_version="replay"
+# RSA_version="difficulty"
+# RSA_version="replay_zero_off_diag"
+# RSA_version="replay_nan_off_diag"
 
 # Load FSL
 module load fsl
@@ -19,7 +22,7 @@ if [ ! -d $groupDir ]; then
 fi
 
 # Get the example result directory
-example_resultDir=${scratchDir}/derivatives/sub-03/func/replay/results-standard-space
+example_resultDir=${scratchDir}/derivatives/sub-03/analysis/${RSA_version}/results-standard-space
 
 list_of_std_b_files=$(find "$example_resultDir" -name "b_values_std.nii.gz" -type f)
 
@@ -32,23 +35,23 @@ list_of_std_b_files=$(find "$example_resultDir" -name "b_values_std.nii.gz" -typ
 #     list_of_std_beta_files=$(find "$example_resultDir" -name "*beta_std.nii.gz" -type f)
 # fi
 
-# remove all the stuff from the directoty 
+# remove all the stuff from the directory 
 
 echo this is example resultDir $example_resultDir
 # Then, for each of these files
 for file in $list_of_std_b_files; do
     # Extract the filename
     filename=$(basename "$file")
-    echo Now moving and merging $filename from the list of b files
+    echo Now moving and merging $filename from the list of beta files
     # no 01, 21
     # for subjectTag in 02 03; do
     for subjectTag in 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 27 28 29 30 31 32 33 34 35; do
         
         # Get the results directory for the subject
-        resultDir=${scratchDir}/derivatives/sub-${subjectTag}/func/replay/results-standard-space
+        resultDir=${scratchDir}/derivatives/sub-${subjectTag}/analysis/${RSA_version}/results-standard-space
         # Create the directory is it does not exist
         if [ ! -d $resultDir ]; then
-            resultDir=${scratchDir}/derivatives/sub-${subjectTag}/func/replay/results-standard-space
+            resultDir=${scratchDir}/derivatives/sub-${subjectTag}/analysis/${RSA_version}/results-standard-space
         fi
 
         echo For each subject $subjectTag and result directory $resultDir
@@ -66,7 +69,7 @@ for file in $list_of_std_b_files; do
     done
 done
     
-# gunzip $(ls ${groupDir}/*.nii.gz)
+gunzip $(ls ${groupDir}/*.nii.gz)
 echo done!
 
 

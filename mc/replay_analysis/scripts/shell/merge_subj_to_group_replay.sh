@@ -3,11 +3,15 @@ scratchDir= "/home/fs0/chx061/scratch/data"
 analysisDir="/home/fs0/chx061/scratch/analysis"
 
 glm_version="01"
-RSA_version="replay"
+
+# RSA_version="replay"
+# RSA_version="difficulty"
+# RSA_version="replay_nan_off_diag"
+RSA_version="replay_zero_off_diag"
 
 
 groupDir=${scratchDir}/derivatives/group/group_RSA_${RSA_version}_glmbase_${glm_version}
-echo this is group dir $groupDir
+echo This is group dir $groupDir
 if [ ! -d $groupDir ]; then
     mkdir $groupDir
 fi
@@ -29,7 +33,7 @@ for file in $list_of_std_beta_files; do
     echo now moving and merging $filename
     # no 21 
     # also find a way to include sub 33 and 34 in glm 06 rsa 05 once they are done!!
-    for subjectTag in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 27 28 29 30 31 32 33; do
+    for subjectTag in 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 27 28 29 30 31 32 33; do
         # for every result file
         resultDir=${scratchDir}/derivatives/sub-${subjectTag}/func/RSA_${RSA_version}_glmbase_${glm_version}/results-standard-space
         if [ ! -d $resultDir ]; then

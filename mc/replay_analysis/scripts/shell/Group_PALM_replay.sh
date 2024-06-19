@@ -11,8 +11,11 @@
 scratchDir="/home/fs0/chx061/scratch/data"
 # fslDir="/opt/fmrib/fsl"
 
-glm_version="01"
-RSA_version="replay"
+glm_version="instruction_period"
+# RSA_version="replay"
+# RSA_version="difficulty"
+RSA_version="replay_nan_off_diag"
+# RSA_version="replay_zero_off_diag"
 
 
 module load PALM/032024-MATLAB-2024a
