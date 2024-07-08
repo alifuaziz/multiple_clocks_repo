@@ -11,10 +11,12 @@
 scratchDir="/home/fs0/chx061/scratch/data"
 # fslDir="/opt/fmrib/fsl"
 
-glm_version="instruction_period"
-# RSA_version="replay"
+# glm_version="instruction_period"
+glm_version="instruction_period_sliding_window"
+
+RSA_version="replay"
 # RSA_version="difficulty"
-RSA_version="replay_nan_off_diag"
+# RSA_version="replay_nan_off_diag"
 # RSA_version="replay_zero_off_diag"
 
 
@@ -22,14 +24,14 @@ module load PALM/032024-MATLAB-2024a
 # module load fsl
 
 # needs to be unzipped files!
-groupDir=${scratchDir}/derivatives/group/group_RSA_${RSA_version}_glmbase_${glm_version}
-# Check if the directory exists
-if [ ! -d "$groupDir" ]; then
-    echo "Group Directory does not exist."
-    exit 1
-else
-    echo Folder with concatenated files for permutation testing: $groupDir
-fi
+# groupDir=${scratchDir}/derivatives/group/group_RSA_${RSA_version}_glmbase_${glm_version}
+# # Check if the directory exists
+# if [ ! -d "$groupDir" ]; then
+#     echo "Group Directory does not exist."
+#     exit 1
+# else
+#     echo Folder with concatenated files for permutation testing: $groupDir
+# fi
 
 # HYPERPARAMETERS FOR PALM
 # Both mask and input files should be unzipped (.nii)
@@ -48,30 +50,49 @@ fi
 
 
 echo Group Directory $groupDir
-
-# Loop through all files in the RSA group results directory
-for curr_file in "$groupDir"/*; do
-    # Check if it's a regular file
-    # NOTE:what should the file format for this be? It should be the concatentated file from the output of the fslmerge script. This is the file we are doing the permutation testing on.
-    echo "Current file: $curr_file"
-
-
-    if [ -f "$curr_file" ]; then
-        # Set path for output file
-        old_file_name=$(basename "${curr_file}")
-        echo "File basename: $old_file_name"
-        # remove extension of the file name
-        file_name="${old_file_name%.*}"
-        echo "File name without extension: $file_name"
-        # Set the output path for the file
-        outPath=$permDir/${file_name}
-        echo "Output filename of PALM: $outPath"
-        # Run PALM
-        palm -i ${curr_file} -T -C $clusterThreshold -Cstat mass -n $permutationNumber -o $outPath -ise -save1-p
-        # echo "Processed: $curr_file"
+# For each TR
+for TR in 10; do
+    # Defining the output group directory
+    groupDir=${scratchDir}/derivatives/group/group_RSA_${RSA_version}_glmbase_${glm_version}/TR${TR}
+    # Check if the directory exists
+    if [ ! -d "$groupDir" ]; then
+        echo "Group Directory does not exist."
+        exit 1
+    else
+        echo Folder with concatenated files for permutation testing: $groupDir
     fi
-done
 
+    # Construct the folder for permutation testing for this analysis
+    permDir=$scratchDir/derivatives/group/RSA_${RSA_version}_glmbase_${glm_version}_PALM/TR${TR}
+    if [ ! -d "$permDir" ]; then
+        echo "Creating directory for permutation testing: $permDir"
+        mkdir ${permDir}
+    else
+        echo "Directory for permutation testing already exists: $permDir"
+    fi
+
+    # Loop through all files in the RSA group results directory
+    for curr_file in "$groupDir"/*; do
+        # Check if it's a regular file
+        # NOTE:what should the file format for this be? It should be the concatentated file from the output of the fslmerge script. This is the file we are doing the permutation testing on.
+        echo "Current file: $curr_file"
+
+        if [ -f "$curr_file" ] && [[ "$curr_file" != *.gz ]]; then
+            # Set path for output file
+            old_file_name=$(basename "${curr_file}")
+            echo "File basename: $old_file_name"
+            # remove extension of the file name
+            file_name="${old_file_name%.*}"
+            echo "File name without extension: $file_name"
+            # Set the output path for the file
+            outPath=$permDir/${file_name}
+            echo "Output filename of PALM: $outPath"
+            # Run PALM
+            palm -i ${curr_file} -T -C $clusterThreshold -Cstat mass -n $permutationNumber -o $outPath -ise -save1-p
+            echo "Processed: $curr_file"
+        fi
+    done
+done
 
 echo "Done with PALM permutation testing for all files in the group directory"
 

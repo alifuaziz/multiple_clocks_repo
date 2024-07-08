@@ -2,8 +2,11 @@
 import pandas as pd
 import pickle
 
-from mc.replay_analysis.functions import data_rdms
-from mc.analyse.searchlight import get_volume_searchlight
+# from mc.replay_analysis.functions import data_rdms
+import data_rdms
+import model_rdms
+
+from searchlight import get_volume_searchlight
 from nilearn.image import load_img
 
 def main(    
@@ -15,6 +18,9 @@ def main(
     RDM_VERSION         = kwargs['META_DATA'].get('RDM_VERSION')
     TR                  = kwargs['META_DATA'].get('TR')
 
+    # 
+    # for k, v in kwargs.items():
+    #     print(f"{k}: {v}")
 
     # Load the EVs data
 
@@ -97,13 +103,16 @@ def main(
         EVs_data_dict = EVs_data_dict,
     )
         
-
     if TR is not None:
+        print(f"TR: {TR}")
         vol_searchlight_dir = f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{str(TR)}/preprocessing/vol_searchlight_df.pkl"
         data_searchlight_dir = f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{str(TR)}/preprocessing/data_searchlight_df.pkl"
     else:
+        print("Overall")
         vol_searchlight_dir = f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/vol_searchlight_df.pkl"
         data_searchlight_dir = f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/data_searchlight_df.pkl"
+
+    print(vol_searchlight_dir)
 
     # Save the vol_searchlight to a pickle file
     with open(vol_searchlight_dir, 'wb') as f:
@@ -112,3 +121,5 @@ def main(
     # Save the data_searchlight to a pickle file
     with open(data_searchlight_dir, 'wb') as f:
         pickle.dump(data_searchlight, f)
+
+    pass

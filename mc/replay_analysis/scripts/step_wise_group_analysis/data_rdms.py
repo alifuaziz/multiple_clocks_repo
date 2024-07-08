@@ -87,29 +87,34 @@ def get_EV_path_dict_instruction_period(subject_directory: str) -> dict:
 
 def get_EV_path_dict_instruction_period_sliding_window(subject_directory: str, TR: int) -> dict:
     """
-    Param
-        subject_directory: str of the subject directory
-        TR: int of the TR of the data
+    Param:
+        - subject_directory: str of the subject directory
+        - TR: int of the TR of the data
     
-    Returns a dictionary with the paths to the EVs for the sliding window instruction period
+    Returns:
+        - a dictionary with the paths to the EVs for the sliding window instruction period
     """
+    print(f"Getting EVs for TR{TR}...")
+
     EVs_path_dict = {}
     # pe_path is the path to of the instruction period for each of the task 
     split = 1
-    pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
+    pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
 
-    with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
+    with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
         for line in file:
             index, name = line.strip().split(' ', 1)
             EVs_path_dict[f"{name}_EV_{index}"] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
 
     split = 2
-    pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
+    pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
 
-    with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
+    with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
             for line in file:
                 index, name = line.strip().split(' ', 1)
                 EVs_path_dict[f"{name}_EV_{index}"] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
+
+    print(pe_path)
 
     return EVs_path_dict
 
@@ -373,6 +378,54 @@ def get_data_rdms(
     return data_rdms_dict
 
 
+def get_data_rdms_between_conditions(
+        data_searchlight1: dict,
+        data_searchlight2: dict,
+) -> dict:
+    """
+    Get the RDMs between two different datasets.
+
+    This will be used to compared the conditions of the instruction perdiod of the 20 conditions to other things.
+    1. Compared with the conditions of the instruction period (i.e. each searchlight will be the average volume over the execution period of the 20 different conditions)
+    2. Compared with the conditions of the model (doing the task)
+    
+    """
+
+    # assert that every pandas df in the dictionary has the same number of conditions.
+
+    data_rdms_dict = {}
+    with tqdm(total=len(data_searchlight1), desc='Creating Data RDMS...') as pbar:
+        for center in data_searchlight1:
+            # Get the dataframes from the dictionary
+            df1 = data_searchlight1[center]
+            df2 = data_searchlight2[center]
+
+            # Get the RDMs between the two dataframes
+            rdm = get_data_rdm_from_dfs(df1, df2)
+
+            # Add the RDM to the dictionary
+            data_rdms_dict[center] = rdm
+
+            # Update the progress bar
+            pbar.update(1)
+    pass
+
+def get_data_rdm_from_dfs(
+        df1: pd.DataFrame,
+        df2: pd.DataFrame,
+):
+    """
+    Compare the two dataframes and return the RDM that compared the instruction conditions with the other conditons.
+
+    """
+    
+    # compute the dot product between the two dataframes
+
+
+
+    return rdm
+
+
 
 def get_data_rdms_nan_off_diag(
     data_rdms_dict: dict,
@@ -425,7 +478,7 @@ def get_data_rdms_vector_labels(
     # Return the labels
     return labels
 
-def get_data_rdms_vectors(
+def get_data_rdms_vectors_off_diag(
     data_rdms_dict: dict,
 ) -> dict:
     """

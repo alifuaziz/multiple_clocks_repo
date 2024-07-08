@@ -5,7 +5,7 @@ Alif's Functions for RSA
 import numpy as np
 import pandas as pd
 NaN = np.nan
-import mc.replay_analysis.functions.data_rdms as data_rdms
+import data_rdms
 
 
 

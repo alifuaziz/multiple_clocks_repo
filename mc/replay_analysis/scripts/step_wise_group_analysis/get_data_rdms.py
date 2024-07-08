@@ -1,8 +1,11 @@
 import pickle
 import pandas as pd
 
-from mc.replay_analysis.functions import data_rdms
-from mc.replay_analysis.functions import model_rdms
+# from mc.replay_analysis.functions import data_rdms
+# from mc.replay_analysis.functions import model_rdms
+
+import data_rdms
+import model_rdms
 
 
 
@@ -13,11 +16,12 @@ def main(
     SUBJECT_DIRECTORY   = kwargs['META_DATA'].get('SUBJECT_DIRECTORY')
     RDM_VERSION         = kwargs['META_DATA'].get('RDM_VERSION')
     EVS_TYPE            = kwargs['META_DATA'].get('EVS_TYPE')
-    TR                  = kwargs['META_DATA'].get('TR', None)
+    TR                  = kwargs['META_DATA'].get('TR')
 
     # load data_searchlight from a pickle file
     if TR is not None:
         # Load the data_searchlight from the correct TR directory
+        # Chekc if this is actually working and accessing the correct pkl file 
         with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{TR}/preprocessing/data_searchlight_df.pkl", 'rb') as f:
             data_searchlight = pickle.load(f)
 
@@ -25,8 +29,6 @@ def main(
         # Load the data_searchlight correct directory
         with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/data_searchlight_df.pkl", 'rb') as f:
             data_searchlight = pickle.load(f)
-
-
         pass        
 
 
@@ -42,13 +44,13 @@ def main(
     # )
 
     if TR is not None:
-        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{TR}/preprocessing/searchlight_data_rdms.pkl", 'wb') as f:
-            pickle.dump(data_rdms_dict, f)
+        searchlight_data_rdms_file = f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/TR{TR}/preprocessing/searchlight_data_rdms.pkl"
+    else: 
+        searchlight_data_rdms_file = f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/searchlight_data_rdms.pkl"
 
-    else:
-            
-        with open(f"{SUBJECT_DIRECTORY}/analysis/{EVS_TYPE}/preprocessing/searchlight_data_rdms.pkl", 'wb') as f:
-            pickle.dump(data_rdms_dict, f)
+    # save the data_rdms_dict for future use
+    with open(searchlight_data_rdms_file, 'wb') as f:
+        pickle.dump(data_rdms_dict, f)
 
     # with open(f"{SUBJECT_DIRECTORY}/analysis/{RDM_VERSION}/preprocessing/searchlight_data_rdms_tri.pkl", 'wb') as f:
     #     pickle.dump(data_rdms_tri, f)
