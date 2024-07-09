@@ -15,9 +15,9 @@ scratchDir="/home/fs0/chx061/scratch/data"
 evType="instruction_period_sliding_window"
 # trIndex="0"
 
-# analysisType="replay"
+analysisType="replay"
 # analysisType="difficulty"
-analysisType="replay_nan_off_diag"
+# analysisType="replay_nan_off_diag"
 # analysisType="replay_zero_off_diag"
 
 echo Now transforming results from replay analysis to standard space
@@ -25,7 +25,7 @@ echo Now transforming results from replay analysis to standard space
 # for subjectTag in 01; do
 # for subjectTag in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 27 28 29 30 31 32 33 34 35; do
 for subjectTag in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 27 28 29 30 31 32 33 34 35; do
-    for trIndex in 0 1 2 3 4 5 6 7 8 9 10; do
+    for trIndex in 0 1 2 3 4 5 6 7 8 9 10 11; do
         
         if [ $evType == "instruction_period_sliding_window" ]; then
             # Get the directory of the results

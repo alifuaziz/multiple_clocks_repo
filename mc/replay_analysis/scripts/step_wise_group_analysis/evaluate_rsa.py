@@ -55,7 +55,7 @@ def main(
             TYPE = RDM_VERSION, 
         )
 
-        model_rdms_dict = data_rdms.get_data_rdms_vectors(
+        model_rdms_dict = data_rdms.get_data_rdms_vectors_off_diag(
             data_rdms_dict = model_rdms_dict
         )
     else:
@@ -66,6 +66,18 @@ def main(
         # Function for this not written
         data_rdms_dict_vectors = data_rdms.get_data_rdms_vectors_square(
             data_rdms_dict = data_rdms_dict
+        )
+
+        # 
+        conditions = data_rdms.get_standard_order()
+
+        model_rdms_dict = model_rdms.get_model_rdms(
+            conditions = conditions, 
+            TYPE = RDM_VERSION, 
+        )
+
+        model_rdms_dict = data_rdms.get_data_rdms_vectors_square(
+            data_rdms_dict = model_rdms_dict
         )
         pass
 

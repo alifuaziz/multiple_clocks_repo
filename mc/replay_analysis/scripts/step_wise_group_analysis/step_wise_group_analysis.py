@@ -30,8 +30,8 @@ subject_list = [x for x in subject_list if 'sub-21' not in str(x)]
 
 print(subject_list)
 
-# SUB = str(sys.argv[1])
-SUB = 'sub-02'
+SUB = str(sys.argv[1])
+# SUB = 'sub-02'
 META_DATA = \
     {  
         'SUBJECT_DIRECTORY': str(DATA_FOLDER) + '/derivatives/' + SUB,
@@ -41,9 +41,9 @@ META_DATA = \
         # 'TR': None, # Used if the sliding window period is not being used.    
         'TR': 0, # Which second of the sliding window is being analyised. Indexing starts from 0
         # 'RDM_VERSION': 'replay',
-        'RDM_VERSION': 'replay_nan_off_diag',
+        # 'RDM_VERSION': 'replay_nan_off_diag',
         # 'RDM_VERSION': 'replay_zero_off_diag',
-        # 'RDM_VERSION': 'difficulty',
+        'RDM_VERSION': 'difficulty',
     }
 # Print the META_DATA of the analysis that is being run
 # print(META_DATA)
@@ -52,9 +52,10 @@ META_DATA = \
 
 
 
+# for TR in range(12):
 for TR in range(1):
     # Update the TR value 
-    META_DATA['TR'] = TR
+    META_DATA['TR'] = 11
     print("Running analysis for the following META_DATA")
     for k, v in META_DATA.items():
         print(f"{k}: {v}")

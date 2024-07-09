@@ -96,20 +96,41 @@ def get_EV_path_dict_instruction_period_sliding_window(subject_directory: str, T
     """
     print(f"Getting EVs for TR{TR}...")
 
-    EVs_path_dict = {}
-    # pe_path is the path to of the instruction period for each of the task 
-    split = 1
-    pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
 
-    with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
-        for line in file:
-            index, name = line.strip().split(' ', 1)
-            EVs_path_dict[f"{name}_EV_{index}"] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
+    if TR != 11:
+        EVs_path_dict = {}
+        # pe_path is the path to of the instruction period for each of the task 
+        split = 1
+        pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
 
-    split = 2
-    pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
+        with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
+            for line in file:
+                index, name = line.strip().split(' ', 1)
+                EVs_path_dict[f"{name}_EV_{index}"] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
 
-    with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
+        split = 2
+        pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
+
+        with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
+            for line in file:
+                index, name = line.strip().split(' ', 1)
+                EVs_path_dict[f"{name}_EV_{index}"] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
+
+    else:
+        EVs_path_dict = {}
+        # pe_path is the path to of the instruction period for each of the task
+        split = 1
+        pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
+
+        with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
+            for line in file:
+                index, name = line.strip().split(' ', 1)
+                EVs_path_dict[f"{name}_EV_{index}"] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
+
+        split = 2
+        pe_path = f"{subject_directory}/func/glm_01-TR{str(TR)}_pt0{split}.feat/stats"
+
+        with open(f"{subject_directory}/func/EVs_01-TR{str(TR)}_pt0{split}/task-to-EV.txt", 'r') as file:
             for line in file:
                 index, name = line.strip().split(' ', 1)
                 EVs_path_dict[f"{name}_EV_{index}"] = os.path.join(pe_path, f"pe{int(index)+1}.nii.gz")
@@ -515,8 +536,33 @@ def get_data_rdms_vectors_off_diag(
             # Update the progress bar
             pbar.update(1)
 
-    # Return the dictionary of the searchlights
+    # Return the dictionary of the searchlights' rdms
     return df_dict  
+
+def get_data_rdms_vectors_square(
+    data_rdms_dict: dict,
+) -> dict:
+    """
+    Get the dictionary of all of the different searchk
+    Turne the square RDMs into a vector form.  for each searlchihg. 
+
+
+    Return that dictionary for comparison in the GLM
+    """
+
+    with tqdm(total=len(data_rdms_dict), desc='Converting to vector form') as pbar:
+        for searchlight in data_rdms_dict:
+            # Get the data frame from the dictionary
+            df = data_rdms_dict[searchlight]
+            # Convert the data frame to a numpy array and then to a 1D array
+            df = df.to_numpy().ravel()
+            # Add the array to the dictionary
+            data_rdms_dict[searchlight] = pd.DataFrame(df)
+            # Update the progress bar
+            pbar.update(1)
+
+    # Return the dictionary of the searchlights' rdms
+    return data_rdms_dict
 
 def dissimilarity_measure(
     v1: np.array, v2: np.array,

@@ -9,8 +9,8 @@ scratchDir="/vols/Scratch/chx061/data"
 # 
 # glm_version="instruction_period"
 glm_version="instruction_period_sliding_window"
-# RSA_version="replay"
-RSA_version="difficulty"
+RSA_version="replay"
+# RSA_version="difficulty"
 # RSA_version="replay_zero_off_diag"
 # RSA_version="replay_nan_off_diag"
 
@@ -24,7 +24,7 @@ fi
 
 # Load FSL
 module load fsl
-for TR in 0 1 2 3 4 5 6 7 8 9 10; do
+for TR in 0 1 2 3 4 5 6 7 8 9 10 11; do
     # Defining the output group directory
     groupDir=${scratchDir}/derivatives/group/group_RSA_${RSA_version}_glmbase_${glm_version}/TR${TR}
 
@@ -52,7 +52,7 @@ list_of_std_b_files=$(find "$example_resultDir" -name "b_values_std.nii.gz" -typ
 
 echo this is example resultDir $example_resultDir
 # For each TR 
-for TR in 0 1 2 3 4 5 6 7 8 9 10; do
+for TR in 0 1 2 3 4 5 6 7 8 9 10 11; do
 # for TR in 0; do
     # Defining the output group directory
     groupDir=${scratchDir}/derivatives/group/group_RSA_${RSA_version}_glmbase_${glm_version}/TR${TR}
