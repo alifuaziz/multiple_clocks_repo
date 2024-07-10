@@ -12,3 +12,5 @@ mc/replay_analysis/scripts/step_wise_group_analysis/__pycache__/get_vol_searchli
 mc/replay_analysis/scripts/step_wise_group_analysis/__pycache__/get_vol_searchlights.cpython-312.pyc
 mc/replay_analysis/scripts/step_wise_group_analysis/__pycache__/data_rdms.cpython-312.pyc
 mc/replay_analysis/scripts/step_wise_group_analysis/__pycache__/evaluate_rsa.cpython-312.pyc
+mc/replay_analysis/scripts/step_wise_group_analysis/__pycache__/data_rdms.cpython-312.pyc
+mc/replay_analysis/scripts/step_wise_group_analysis/__pycache__/evaluate_rsa.cpython-312.pyc
