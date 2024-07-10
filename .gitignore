@@ -14,3 +14,7 @@ mc/replay_analysis/scripts/step_wise_group_analysis/__pycache__/data_rdms.cpytho
 mc/replay_analysis/scripts/step_wise_group_analysis/__pycache__/evaluate_rsa.cpython-312.pyc
 mc/replay_analysis/scripts/step_wise_group_analysis/__pycache__/data_rdms.cpython-312.pyc
 mc/replay_analysis/scripts/step_wise_group_analysis/__pycache__/evaluate_rsa.cpython-312.pyc
+mc/analyse/__pycache__/analyse_MRI_behav.cpython-311.pyc
+mc/analyse/__pycache__/__init__.cpython-311.pyc
+mc/replay_analysis/__pycache__/__init__.cpython-311.pyc
+mc/replay_analysis/scripts/__pycache__/__init__.cpython-311.pyc
