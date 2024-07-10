@@ -96,16 +96,16 @@ analyse_behav = True
 
 for sub in subjects:
     for task_half in task_halves:
-        data_dir_beh = f"/Users/chx061/Documents/projects/multiple_clocks/data/pilot/{sub}/beh/"
-        funcDir =      f"/Users/chx061/Documents/projects/multiple_clocks/data/derivatives/{sub}/func"
-        analysisDir =   "/Users/chx061/Documents/projects/multiple_clocks/multiple_clocks_repo/mc/fmri_analysis"
+        data_dir_beh = f"/Users/xpsy1114/Documents/projects/multiple_clocks/data/pilot/{sub}/beh/"
+        funcDir =      f"/Users/xpsy1114/Documents/projects/multiple_clocks/data/derivatives/{sub}/func"
+        analysisDir =   "/Users/xpsy1114/Documents/projects/multiple_clocks/multiple_clocks_repo/mc/fmri_analysis"
         
         if os.path.isdir(data_dir_beh):
             print("Running on laptop.")
         else:
-            data_dir_beh = f"/home/fs0/chx061/scratch/data/pilot/{sub}/beh/"
-            funcDir = f"/home/fs0/chx061/scratch/data/derivatives/{sub}/func"
-            analysisDir = "/home/fs0/chx061/scratch/analysis"
+            data_dir_beh = f"/home/fs0/xpsy1114/scratch/data/pilot/{sub}/beh/"
+            funcDir = f"/home/fs0/xpsy1114/scratch/data/derivatives/{sub}/func"
+            analysisDir = "/home/fs0/xpsy1114/scratch/analysis"
             print(f"Running on Cluster, setting {data_dir_beh} as data directory")
 
         file = f"{sub}_fmri_pt{task_half}"

@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-from mc.replay_analysis.functions.utils import get_lower_triangle
+# from mc.replay_analysis.functions.utils import get_lower_triangle
 
 def calc_rdm(dataset, method='euclidean', descriptor=None, noise=None,
              cv_descriptor=None, prior_lambda=1, prior_weight=0.1):

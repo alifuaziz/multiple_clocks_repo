@@ -10,7 +10,7 @@ import mc.analyse.extract_and_clean
 import mc.analyse.analyse_MRI_behav
 
 # Imported two libraries from the "rsatoolbox" package
-import mc.analyse.searchlight
+# import mc.analyse.searchlight
 import mc.analyse.calc
 
 #import mc.set_clocks

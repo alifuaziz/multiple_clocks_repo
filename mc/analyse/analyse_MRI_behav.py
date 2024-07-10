@@ -23,7 +23,7 @@ import warnings
 
 import mc
 import mc.analyse.analyse_MRI_behav as analyse_MRI_behav
-import mc.replay_analysis.functions.utils as utils
+# import mc.replay_analysis.functions.utils as utils
 import rsatoolbox.data as rsd
 from rsatoolbox.rdm.calc import _build_rdms
 from rsatoolbox.rdm import RDMs
